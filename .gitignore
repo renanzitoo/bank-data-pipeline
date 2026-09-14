@@ -17,6 +17,9 @@ env/
 # Generated data
 data/generated/
 data/raw/
+data/bronze/
+data/silver/
+data/gold/
 
 # Jupyter
 .ipynb_checkpoints/
