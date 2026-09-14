@@ -6,8 +6,6 @@ from pyspark.sql.functions import (
     when,
     lit
 )
-from pyspark.sql.window import Window
-from pyspark.sql.functions import row_number
 
 
 BRONZE_PATH = "data/bronze/transactions"
@@ -33,6 +31,7 @@ VALID_STATUSES = [
     "CANCELLED",
 ]
 
+
 def create_spark_session():
 
     return (
@@ -41,7 +40,8 @@ def create_spark_session():
         .master("local[*]")
         .getOrCreate()
     )
-    
+
+
 def validate_transactions(df):
 
     validated = (
@@ -123,6 +123,7 @@ def transform_transactions(df):
 
 
 def main():
+
     spark = create_spark_session()
 
     print("Reading Bronze transactions...")
@@ -139,6 +140,8 @@ def main():
 
     print("Validating data quality...")
     validated = validate_transactions(transactions)
+
+    print("Validating account references...")
 
     account_reference = (
         accounts
@@ -171,30 +174,39 @@ def main():
 
     print("Checking duplicate transactions...")
 
-    transaction_window = Window.partitionBy(
-        "transaction_id"
-    ).orderBy(
-        col("transaction_timestamp")
-    )
-
-    validated = validated.withColumn(
-        "transaction_rank",
-        row_number().over(transaction_window)
-    )
-
-    validated = validated.withColumn(
-        "quality_error",
-        when(
-            col("quality_error").isNotNull(),
-            col("quality_error")
+    duplicate_transactions = (
+        validated
+        .groupBy("transaction_id")
+        .count()
+        .filter(
+            col("count") > 1
         )
-        .when(
-            col("transaction_rank") > 1,
-            lit("DUPLICATE_TRANSACTION_ID")
-        )
+        .select("transaction_id")
     )
 
-    validated = validated.drop("transaction_rank")
+    validated = (
+        validated
+        .join(
+            duplicate_transactions.withColumn(
+                "is_duplicate",
+                lit(True)
+            ),
+            on="transaction_id",
+            how="left"
+        )
+        .withColumn(
+            "quality_error",
+            when(
+                col("quality_error").isNotNull(),
+                col("quality_error")
+            )
+            .when(
+                col("is_duplicate") == True,
+                lit("DUPLICATE_TRANSACTION_ID")
+            )
+        )
+        .drop("is_duplicate")
+    )
 
     valid = validated.filter(
         col("quality_error").isNull()
@@ -232,13 +244,16 @@ def main():
         )
 
         for row in error_counts.collect():
-            print(f"  {row['quality_error']:<30} {row['count']:,}")
+            print(
+                f"  {row['quality_error']:<30} "
+                f"{row['count']:,}"
+            )
 
     print("=" * 40)
     print()
 
-
     print("Writing Quarantine...")
+
     (
         invalid.write
         .mode("overwrite")
@@ -247,6 +262,7 @@ def main():
     )
 
     print("Writing Silver...")
+
     (
         valid
         .drop("quality_error")

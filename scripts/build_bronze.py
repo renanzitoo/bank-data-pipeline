@@ -1,12 +1,13 @@
 from pathlib import Path
 
-import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 
 GENERATED_DIR = Path("data/generated")
 BRONZE_DIR = Path("data/bronze")
+
+BATCH_SIZE = 500_000
 
 
 DATASETS = {
@@ -20,10 +21,37 @@ DATASETS = {
 }
 
 
+def normalize_timestamps(table):
+    """
+    Converts timestamp columns to microseconds
+    for better Spark/Parquet compatibility.
+    """
+
+    fields = []
+
+    for field in table.schema:
+
+        if pa.types.is_timestamp(field.type):
+
+            fields.append(
+                pa.field(
+                    field.name,
+                    pa.timestamp("us"),
+                    nullable=field.nullable,
+                )
+            )
+
+        else:
+            fields.append(field)
+
+    return table.cast(pa.schema(fields))
+
+
 def build_partitioned_dataset(
     name: str,
     date_column: str,
 ):
+
     source_path = (
         GENERATED_DIR / f"{name}.parquet"
     )
@@ -36,71 +64,99 @@ def build_partitioned_dataset(
         f"\nProcessing {name}..."
     )
 
-    df = pd.read_parquet(
+    parquet_file = pq.ParquetFile(
         source_path
     )
 
-    df[date_column] = pd.to_datetime(
-        df[date_column]
-    )
+    total_rows = parquet_file.metadata.num_rows
 
-    df["year"] = (
-        df[date_column]
-        .dt.year
-    )
+    processed_rows = 0
 
-    df["month"] = (
-        df[date_column]
-        .dt.month
-    )
-
-    for (year, month), partition in (
-        df.groupby(
-            ["year", "month"]
-        )
+    for batch in parquet_file.iter_batches(
+        batch_size=BATCH_SIZE
     ):
 
-        partition_path = (
-            destination
-            / f"year={year}"
-            / f"month={month:02d}"
+        table = pa.Table.from_batches(
+            [batch]
         )
 
-        partition_path.mkdir(
-            parents=True,
-            exist_ok=True,
+        table = normalize_timestamps(
+            table
         )
 
-        output_path = (
-            partition_path
-            / "data.parquet"
+        date_index = table.schema.get_field_index(
+            date_column
         )
 
-        partition = partition.drop(
-            columns=["year", "month"]
+        date_array = table.column(
+            date_index
         )
 
-        table = pa.Table.from_pandas(
-            partition,
-            preserve_index=False,
+        year_array = pa.compute.year(
+            date_array
         )
 
-        table = table.cast(
-            pa.schema([
-                pa.field(
-                    field.name,
-                    pa.timestamp("us")
-                )
-                if pa.types.is_timestamp(field.type)
-                else field
-                for field in table.schema
-            ])
+        month_array = pa.compute.month(
+            date_array
         )
 
-        pq.write_table(
-            table,
-            output_path,
-            compression="snappy",
+        table = table.append_column(
+            "year",
+            year_array
+        )
+
+        table = table.append_column(
+            "month",
+            month_array
+        )
+
+        pandas_df = table.to_pandas()
+
+        for (year, month), partition in pandas_df.groupby(
+            ["year", "month"]
+        ):
+
+            partition_path = (
+                destination
+                / f"year={year}"
+                / f"month={month:02d}"
+            )
+
+            partition_path.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
+
+            output_path = (
+                partition_path
+                / f"part-{processed_rows}.parquet"
+            )
+
+            partition = partition.drop(
+                columns=["year", "month"]
+            )
+
+            table_partition = pa.Table.from_pandas(
+                partition,
+                preserve_index=False,
+            )
+
+            table_partition = normalize_timestamps(
+                table_partition
+            )
+
+            pq.write_table(
+                table_partition,
+                output_path,
+                compression="snappy",
+            )
+
+        processed_rows += batch.num_rows
+
+        print(
+            f"  Progress: "
+            f"{processed_rows:,}/{total_rows:,} "
+            f"rows"
         )
 
     print(
@@ -123,4 +179,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()  
+    main()
