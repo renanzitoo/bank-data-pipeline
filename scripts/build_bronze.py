@@ -85,6 +85,18 @@ def build_partitioned_dataset(
             preserve_index=False,
         )
 
+        table = table.cast(
+            pa.schema([
+                pa.field(
+                    field.name,
+                    pa.timestamp("us")
+                )
+                if pa.types.is_timestamp(field.type)
+                else field
+                for field in table.schema
+            ])
+        )
+
         pq.write_table(
             table,
             output_path,
