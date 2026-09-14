@@ -20,6 +20,7 @@ data/raw/
 data/bronze/
 data/silver/
 data/gold/
+data/quarantine/
 
 # Jupyter
 .ipynb_checkpoints/
