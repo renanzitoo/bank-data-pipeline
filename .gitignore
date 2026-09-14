@@ -52,3 +52,5 @@ htmlcov/
 # Secrets
 *.pem
 *.key
+
+validation.py

@@ -1,33 +1,52 @@
 import pandas as pd
 
-df = pd.read_parquet(
-    "data/generated/merchants.parquet"
+loans = pd.read_parquet(
+    "data/generated/loans.parquet"
 )
 
-transactions = pd.read_parquet(
-    "data/generated/transactions.parquet",
-    columns=[
-        "transaction_type",
-        "merchant_id",
-    ],
+payments = pd.read_parquet(
+    "data/generated/loan_payments.parquet"
 )
 
-merchants = pd.read_parquet(
-    "data/generated/merchants.parquet",
-    columns=["merchant_id"],
-)
-
-card_transactions = transactions[
-    transactions["transaction_type"]
-    == "CARD_PURCHASE"
+invalid = payments[
+    ~payments["loan_id"].isin(
+        loans["loan_id"]
+    )
 ]
 
 print(
-    len(card_transactions)
+    f"Invalid loan IDs: {len(invalid)}"
 )
 
+payment_counts = (
+    payments
+    .groupby("loan_id")
+    .size()
+    .rename("generated_payments")
+)
+
+validation = loans[
+    [
+        "loan_id",
+        "term_months",
+    ]
+].merge(
+    payment_counts,
+    on="loan_id",
+    how="left",
+)
+
+validation["generated_payments"] = (
+    validation["generated_payments"]
+    .fillna(0)
+)
+
+invalid = validation[
+    validation["term_months"]
+    != validation["generated_payments"]
+]
+
 print(
-    card_transactions["merchant_id"]
-    .isin(merchants["merchant_id"])
-    .all()
+    f"Invalid payment schedules: "
+    f"{len(invalid)}"
 )
