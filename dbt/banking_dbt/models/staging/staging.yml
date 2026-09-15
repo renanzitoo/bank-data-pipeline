@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "Clean customer data from the silver layer."
+
+    columns:
+      - name: customer_id
+        description: "Unique identifier for each customer."
+        tests:
+          - not_null
+          - unique
+      
+      - name: customer_segment
+        description: "The segment to which the customer belongs."
+        tests:
+          - not_null
