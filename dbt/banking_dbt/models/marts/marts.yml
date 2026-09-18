@@ -1,0 +1,178 @@
+version: 2
+
+models:
+
+  - name: fct_daily_transactions
+    description: "Daily transaction metrics by transaction type and status."
+
+    columns:
+      - name: transaction_date
+        description: "Date of the transactions."
+        data_tests:
+          - not_null
+
+      - name: transaction_type
+        description: "Type of transaction."
+        data_tests:
+          - not_null
+
+      - name: status
+        description: "Transaction status."
+        data_tests:
+          - not_null
+
+      - name: transaction_count
+        description: "Number of transactions."
+
+      - name: total_amount
+        description: "Total transaction amount."
+
+      - name: average_amount
+        description: "Average transaction amount."
+
+
+  - name: fct_merchant_performance
+    description: "Aggregated transaction performance by merchant."
+
+    columns:
+      - name: merchant_id
+        description: "Unique identifier of the merchant."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: merchant_name
+        description: "Merchant name."
+        data_tests:
+          - not_null
+
+      - name: merchant_category
+        description: "Merchant business category."
+
+      - name: transaction_count
+        description: "Total number of transactions."
+
+      - name: total_transaction_amount
+        description: "Total transaction amount."
+
+      - name: average_transaction_amount
+        description: "Average transaction amount."
+
+
+  - name: fct_loan_portfolio
+    description: "Loan portfolio with payment performance metrics."
+
+    columns:
+      - name: loan_id
+        description: "Unique identifier of the loan."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Identifier of the customer."
+        data_tests:
+          - not_null
+
+      - name: loan_type
+        description: "Type of loan."
+
+      - name: principal_amount
+        description: "Original loan principal amount."
+
+      - name: loan_status
+        description: "Current loan status."
+
+      - name: total_payments
+        description: "Total number of payments."
+
+      - name: paid_payments
+        description: "Number of paid payments."
+
+      - name: late_payments
+        description: "Number of late payments."
+
+      - name: total_paid_amount
+        description: "Total amount paid."
+
+
+  - name: fct_customer_transactions
+    description: "Aggregated transaction behavior by customer."
+
+    columns:
+      - name: customer_id
+        description: "Unique identifier of the customer."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_segment
+        description: "Customer segmentation."
+
+      - name: total_transactions
+        description: "Total number of transactions."
+
+      - name: total_transaction_amount
+        description: "Total transaction amount."
+
+      - name: average_transaction_amount
+        description: "Average transaction amount."
+
+      - name: completed_transactions
+        description: "Number of completed transactions."
+
+      - name: failed_transactions
+        description: "Number of failed transactions."
+
+
+  - name: customer_360
+    description: "Comprehensive customer-level view combining accounts, transactions, cards, loans and payments."
+
+    columns:
+      - name: customer_id
+        description: "Unique identifier of the customer."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_segment
+        description: "Customer segmentation."
+
+      - name: total_accounts
+        description: "Total number of customer accounts."
+
+      - name: active_accounts
+        description: "Number of active accounts."
+
+      - name: total_transactions
+        description: "Total number of customer transactions."
+
+      - name: total_transaction_amount
+        description: "Total value of customer transactions."
+
+      - name: total_cards
+        description: "Total number of customer cards."
+
+      - name: credit_cards
+        description: "Number of credit cards."
+
+      - name: debit_cards
+        description: "Number of debit cards."
+
+      - name: total_loans
+        description: "Total number of customer loans."
+
+      - name: total_loan_amount
+        description: "Total principal amount of customer loans."
+
+      - name: active_loans
+        description: "Number of active loans."
+
+      - name: defaulted_loans
+        description: "Number of defaulted loans."
+
+      - name: late_payments
+        description: "Number of late loan payments."
+
+      - name: total_paid_amount
+        description: "Total amount paid toward loans."

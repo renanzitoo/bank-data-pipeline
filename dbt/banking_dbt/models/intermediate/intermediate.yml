@@ -1,0 +1,58 @@
+version: 2
+
+models:
+
+  - name: int_customer_transactions
+    description: "Transactions enriched with customer information."
+
+    columns:
+      - name: transaction_id
+        description: "Unique identifier of the transaction."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Identifier of the customer."
+        data_tests:
+          - not_null
+
+  - name: int_merchant_transactions
+    description: "Transactions enriched with merchant information."
+
+    columns:
+      - name: transaction_id
+        description: "Unique identifier of the transaction."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: merchant_id
+        description: "Identifier of the merchant."
+        data_tests:
+          - not_null
+
+  - name: int_loan_payments
+    description: "Loan payments enriched with loan and customer information."
+
+    columns:
+      - name: payment_id
+        description: "Unique identifier of the loan payment."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: loan_id
+        description: "Identifier of the loan."
+        data_tests:
+          - not_null
+
+  - name: int_customer_loans
+    description: "Customer-level loan and payment metrics."
+
+    columns:
+      - name: customer_id
+        description: "Unique identifier of the customer."
+        data_tests:
+          - not_null
+          - unique
