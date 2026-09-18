@@ -58,3 +58,12 @@ htmlcov/
 *.key
 
 validation.py
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+
+# dbt
+dbt_packages/
+target/
+logs/ 

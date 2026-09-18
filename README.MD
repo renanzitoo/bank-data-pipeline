@@ -1,10 +1,10 @@
 # 🏦 Banking Data Lakehouse
 
-A data engineering project that simulates a modern banking data platform, focusing on data ingestion, distributed processing, data quality, Medallion architecture, analytical data modeling, and Lakehouse technologies.
+A data engineering project that simulates a modern banking data platform, focusing on data ingestion, distributed processing, data quality, Medallion architecture, analytical data modeling, dbt transformations, and Lakehouse technologies.
 
 The project uses completely synthetic banking data to simulate a real-world environment containing customers, accounts, transactions, cards, merchants, loans, and loan payments.
 
-> 🚧 **Project Status:** Active Development — Core ETL Pipeline Completed
+> 🚧 **Project Status:** Active Development — Core ETL + dbt Transformation Layer Completed
 
 ---
 
@@ -20,9 +20,11 @@ The main goal of this project is to build an end-to-end banking data platform ca
 * Applying data quality and business rules
 * Detecting and isolating invalid records
 * Building analytical data models
-* Supporting incremental data processing
+* Implementing transformation workflows with dbt
+* Applying automated data tests
+* Documenting analytical data models
 * Preparing the platform for a Lakehouse architecture
-* Providing data for analytics and machine learning
+* Supporting analytics and machine learning workloads
 * Orchestrating the complete pipeline
 
 The project is designed to demonstrate practical Data Engineering concepts rather than simply building a traditional database.
@@ -31,16 +33,15 @@ The project is designed to demonstrate practical Data Engineering concepts rathe
 
 # 🏗️ Architecture
 
-The project follows a Medallion-style Data Lake architecture, with the Lakehouse components being introduced in subsequent phases.
+The project follows a Medallion-style Data Lake architecture.
+
+The current implementation includes a complete Spark-based ETL pipeline followed by a dbt transformation layer.
 
 ```text
                          DATA SOURCES
+
+                    Synthetic Banking Data
                               │
-                    ┌─────────┴─────────┐
-                    │                   │
-                   CSV                 APIs
-                    │                   │
-                    └─────────┬─────────┘
                               ▼
                          INGESTION
                            Python
@@ -50,34 +51,39 @@ The project follows a Medallion-style Data Lake architecture, with the Lakehouse
                     Raw / Partitioned
                               │
                               ▼
-                       Apache Spark
+                        Apache Spark
                               │
                     ┌─────────┴─────────┐
                     │                   │
-               Valid Data         Invalid Data
-                    │                   │
                     ▼                   ▼
-                🥈 SILVER          QUARANTINE
-             Clean / Trusted
+                 SILVER            QUARANTINE
+              Clean / Trusted      Invalid Data
                     │
                     ▼
-                  🥇 GOLD
+                 🥇 GOLD
              Analytical Models
                     │
-              ┌─────┴─────┐
-              ▼           ▼
-             BI           ML
+                    ▼
+                   dbt
+                    │
+          ┌─────────┼─────────┐
+          ▼         ▼         ▼
+      STAGING  INTERMEDIATE  MARTS
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+                   BI                   ML
 
-              Future Lakehouse Components
-                       │
-                       ▼
-                 Apache Iceberg
-                       │
-                       ▼
-                    MinIO/S3
-                       │
-                       ▼
-                    Airflow
+             Future Lakehouse Layer
+                    │
+                    ▼
+               Apache Iceberg
+                    │
+                    ▼
+                 MinIO / S3
+                    │
+                    ▼
+                 Airflow
 ```
 
 ---
@@ -108,7 +114,9 @@ The project follows a Medallion-style Data Lake architecture, with the Lakehouse
 
 ## Transformation
 
-* dbt *(planned)*
+* dbt Core
+* dbt-duckdb
+* DuckDB
 
 ## Orchestration
 
@@ -123,6 +131,11 @@ The project follows a Medallion-style Data Lake architecture, with the Lakehouse
 
 * BigQuery *(planned)*
 * Looker Studio / Metabase *(planned)*
+
+## Machine Learning
+
+* Python
+* Scikit-learn *(planned)*
 
 ---
 
@@ -171,8 +184,6 @@ STANDARD
 PREMIUM
 ```
 
----
-
 ## Accounts
 
 Represents customer bank accounts.
@@ -194,8 +205,6 @@ Account types:
 CHECKING
 SAVINGS
 ```
-
----
 
 ## Transactions
 
@@ -234,8 +243,6 @@ Business rules include:
 * Other transaction types may have a NULL `merchant_id`.
 * Transaction IDs must be unique.
 
----
-
 ## Merchants
 
 Represents establishments where card transactions can occur.
@@ -264,8 +271,6 @@ SERVICES
 OTHER
 ```
 
----
-
 ## Cards
 
 Represents debit and credit cards associated with bank accounts.
@@ -287,8 +292,6 @@ Business rules include:
 * Credit cards must have a credit limit.
 * Debit cards do not have a credit limit.
 * Cards must belong to existing accounts.
-
----
 
 ## Loans
 
@@ -321,8 +324,6 @@ PAID
 DEFAULTED
 CANCELLED
 ```
-
----
 
 ## Loan Payments
 
@@ -410,8 +411,38 @@ banking-data-lakehouse/
 │       ├── build_loan_portfolio.py
 │       └── build_customer_360.py
 │
-├── tests/
+├── dbt/
+│   └── banking_dbt/
+│       ├── models/
+│       │   ├── staging/
+│       │   │   ├── stg_customers.sql
+│       │   │   ├── stg_accounts.sql
+│       │   │   ├── stg_transactions.sql
+│       │   │   ├── stg_merchants.sql
+│       │   │   ├── stg_cards.sql
+│       │   │   ├── stg_loans.sql
+│       │   │   ├── stg_loan_payments.sql
+│       │   │   └── staging.yml
+│       │   │
+│       │   ├── intermediate/
+│       │   │   ├── int_customer_transactions.sql
+│       │   │   ├── int_merchant_transactions.sql
+│       │   │   ├── int_loan_payments.sql
+│       │   │   ├── int_customer_loans.sql
+│       │   │   └── intermediate.yml
+│       │   │
+│       │   └── marts/
+│       │       ├── fct_daily_transactions.sql
+│       │       ├── fct_merchant_performance.sql
+│       │       ├── fct_loan_portfolio.sql
+│       │       ├── fct_customer_transactions.sql
+│       │       ├── customer_360.sql
+│       │       └── marts.yml
+│       │
+│       ├── dbt_project.yml
+│       └── packages.yml
 │
+├── tests/
 ├── pipeline.py
 ├── requirements.txt
 ├── .gitignore
@@ -435,10 +466,10 @@ data/bronze/transactions/
 │   ├── month=01/
 │   ├── month=02/
 │   └── ...
-│
+
 ├── year=2025/
 │   └── ...
-│
+
 └── year=2026/
     ├── month=01/
     ├── month=02/
@@ -487,7 +518,7 @@ Apache Spark
    │
    ├───────────────┐
    ▼               ▼
-SILVER         QUARANTINE
+SILVER        QUARANTINE
 ```
 
 The Silver layer currently contains validated datasets for:
@@ -506,7 +537,7 @@ The Silver layer currently contains validated datasets for:
 
 Data quality is treated as a core part of the pipeline.
 
-Validation is performed both during Silver processing and through dedicated QA scripts.
+Validation is performed during Silver processing and through dedicated QA scripts.
 
 ## Primary Key Validation
 
@@ -585,8 +616,6 @@ data/gold/
 └── customer_360/
 ```
 
----
-
 ## Daily Transaction Summary
 
 Aggregates transactions by:
@@ -607,60 +636,17 @@ minimum_amount
 maximum_amount
 ```
 
-This model is designed to support time-series transaction analysis.
-
----
+This model supports time-series transaction analysis.
 
 ## Customer Transaction Metrics
 
 Provides transaction-level metrics aggregated by customer.
 
-Metrics include:
-
-```text
-customer_id
-customer_segment
-transaction_count
-total_transaction_amount
-average_transaction_amount
-pix_count
-card_purchase_count
-transfer_count
-deposit_count
-withdrawal_count
-completed_transactions
-failed_transactions
-pending_transactions
-first_transaction_at
-last_transaction_at
-```
-
----
+Metrics include customer segmentation, transaction volume, transaction amounts, transaction types, status metrics, and transaction timestamps.
 
 ## Merchant Performance
 
-Provides performance metrics for merchants.
-
-Metrics include:
-
-```text
-merchant_id
-merchant_name
-merchant_category
-city
-state
-transaction_count
-total_transaction_amount
-average_transaction_amount
-completed_transactions
-failed_transactions
-pending_transactions
-unique_accounts
-```
-
-This model can be used to analyze merchant performance and transaction volume.
-
----
+Provides performance metrics for merchants, including transaction volume, transaction amounts, transaction status, and merchant attributes.
 
 ## Loan Portfolio
 
@@ -676,7 +662,6 @@ principal_amount
 interest_rate
 term_months
 loan_status
-created_at
 total_payments
 paid_payments
 pending_payments
@@ -686,8 +671,6 @@ remaining_amount
 ```
 
 > `remaining_amount` is currently a simplified analytical metric calculated from principal amount minus total paid amount. It does not represent a real amortization balance.
-
----
 
 ## Customer 360
 
@@ -705,27 +688,16 @@ CUSTOMERS
    └── LOAN PAYMENTS
 ```
 
-Metrics include:
+The model contains customer-level metrics related to:
 
-```text
-customer_id
-customer_segment
-total_accounts
-active_accounts
-total_transactions
-total_transaction_amount
-average_transaction_amount
-total_cards
-credit_cards
-total_loans
-total_loan_amount
-active_loans
-defaulted_loans
-total_loan_payments
-paid_payments
-late_payments
-total_paid_amount
-```
+* Accounts
+* Transactions
+* Cards
+* Loans
+* Loan payments
+* Defaulted loans
+* Late payments
+* Total amounts
 
 This model will serve as an important foundation for future analytics and machine learning workloads.
 
@@ -735,7 +707,7 @@ This model will serve as an important foundation for future analytics and machin
 
 The Gold layer has a dedicated QA process.
 
-The validation checks include:
+Validation checks include:
 
 * Primary key uniqueness
 * NULL primary keys
@@ -746,7 +718,7 @@ The validation checks include:
 * Negative metric detection
 * Aggregation reconciliation against Silver
 
-Examples of reconciliation checks:
+Examples:
 
 ```text
 Silver Transactions
@@ -769,6 +741,99 @@ Customer 360
 ```
 
 The current Gold QA stage has been successfully executed.
+
+---
+
+# 🔄 dbt Transformation Layer
+
+After the Spark-based ETL pipeline, dbt is used as an analytical transformation and testing layer.
+
+The dbt project uses **DuckDB** to query the local Parquet-based Silver data.
+
+The dbt architecture follows:
+
+```text
+Silver Parquet
+      │
+      ▼
+   STAGING
+      │
+      ▼
+ INTERMEDIATE
+      │
+      ▼
+    MARTS
+```
+
+## Staging
+
+The staging layer exposes the Silver datasets through dbt models.
+
+Current staging models:
+
+```text
+stg_customers
+stg_accounts
+stg_transactions
+stg_merchants
+stg_cards
+stg_loans
+stg_loan_payments
+```
+
+Staging models are materialized as views.
+
+## Intermediate
+
+The intermediate layer contains reusable transformations and joins between the staging models.
+
+Current models:
+
+```text
+int_customer_transactions
+int_merchant_transactions
+int_loan_payments
+int_customer_loans
+```
+
+These models enrich and combine data before it reaches the analytical marts.
+
+Intermediate models are materialized as tables.
+
+## Marts
+
+The marts layer contains business-oriented analytical models designed for downstream consumption.
+
+Current models:
+
+```text
+fct_daily_transactions
+fct_merchant_performance
+fct_loan_portfolio
+fct_customer_transactions
+customer_360
+```
+
+Marts are materialized as tables.
+
+The marts provide datasets suitable for:
+
+* BI dashboards
+* Analytical queries
+* Business metrics
+* Machine learning feature engineering
+
+## dbt Data Quality
+
+The dbt project includes tests and documentation for:
+
+* Primary key uniqueness
+* NULL checks
+* Model-level documentation
+* Column descriptions
+* Analytical model validation
+
+The current dbt test suite executes successfully across the Staging, Intermediate, and Mart layers.
 
 ---
 
@@ -801,9 +866,19 @@ Apache Spark
       │
       ▼
 Gold QA
+      │
+      ▼
+dbt
+      │
+      ├── Staging
+      ├── Intermediate
+      └── Marts
+      │
+      ▼
+dbt Tests
 ```
 
-The core ETL pipeline from raw synthetic data to validated analytical datasets is currently operational.
+The core ETL and analytical transformation pipeline is currently operational.
 
 ---
 
@@ -891,13 +966,14 @@ Incremental processing will be implemented in a future phase using Lakehouse tab
 
 ## Phase 5 — Transformation with dbt
 
-* [ ] Introduce dbt
-* [ ] Create staging models
-* [ ] Create intermediate models
-* [ ] Create analytical models
-* [ ] Add dbt tests
-* [ ] Add model documentation
-* [ ] Implement lineage
+* [x] Introduce dbt Core
+* [x] Configure DuckDB
+* [x] Create staging models
+* [x] Create intermediate models
+* [x] Create analytical marts
+* [x] Add dbt tests
+* [x] Add model documentation
+* [ ] Implement lineage visualization
 * [ ] Implement incremental models
 
 ## Phase 6 — Lakehouse
@@ -912,10 +988,11 @@ Incremental processing will be implemented in a future phase using Lakehouse tab
 ## Phase 7 — Object Storage
 
 * [ ] Introduce MinIO
-* [ ] S3-compatible storage
+* [ ] Configure S3-compatible storage
 * [ ] Move Data Lake storage to object storage
 * [ ] Configure bucket structure
 * [ ] Integrate Spark with object storage
+* [ ] Integrate dbt with the Lakehouse layer
 
 ## Phase 8 — Orchestration
 
@@ -950,7 +1027,7 @@ Incremental processing will be implemented in a future phase using Lakehouse tab
 * [ ] Feature engineering
 * [ ] Model training
 * [ ] Model evaluation
-* [ ] Integrate ML outputs with Gold layer
+* [ ] Integrate ML outputs with Gold/Lakehouse layer
 
 ---
 
@@ -998,7 +1075,7 @@ Build the Bronze layer:
 python scripts/build_bronze.py
 ```
 
-Run the Silver pipeline:
+Run the Spark pipeline:
 
 ```bash
 python pipeline.py
@@ -1016,6 +1093,16 @@ Run Gold QA:
 spark-submit scripts/profile_gold_data.py
 ```
 
+Run dbt:
+
+```bash
+cd dbt/banking_dbt
+
+dbt debug
+dbt run
+dbt test
+```
+
 ---
 
 # 🔐 Data Privacy
@@ -1025,6 +1112,8 @@ This project does **not** use real banking or customer data.
 All customers, transactions, accounts, merchants, cards, loans, and payments are synthetically generated for educational and portfolio purposes.
 
 No real personal or financial information is stored in the repository.
+
+Local analytical artifacts such as the DuckDB database are also excluded from version control.
 
 ---
 
@@ -1049,8 +1138,11 @@ This project demonstrates practical knowledge of:
 * Data Quarantine
 * Data Modeling
 * Analytical Modeling
-* Dimensional Modeling
 * Data Warehousing
+* dbt
+* SQL Transformations
+* dbt Testing
+* Data Documentation
 * Pipeline Design
 * Incremental Processing
 * Data Governance
@@ -1060,7 +1152,7 @@ This project demonstrates practical knowledge of:
 
 # 📌 Current Project Status
 
-The core Data Engineering pipeline is currently operational.
+The core Data Engineering pipeline and dbt transformation layer are currently operational.
 
 ```text
 Synthetic Data
@@ -1079,7 +1171,15 @@ Silver QA
       ↓
 Gold QA
       ↓
-✅ CORE PIPELINE COMPLETED
+dbt Staging
+      ↓
+dbt Intermediate
+      ↓
+dbt Marts
+      ↓
+dbt Tests
+      ↓
+✅ CORE ETL + TRANSFORMATION COMPLETED
 ```
 
 Current implementation includes:
@@ -1101,7 +1201,31 @@ Current implementation includes:
 * Five analytical Gold models
 * Silver QA
 * Gold QA
+* dbt Staging layer
+* dbt Intermediate layer
+* Five dbt analytical marts
+* dbt tests
+* dbt model documentation
+* DuckDB-based local analytical environment
 
 ### Next Major Milestone
 
-The next major milestone is **introducing dbt and evolving the project toward a complete Lakehouse architecture**, followed by MinIO/S3, Apache Iceberg, Airflow, Docker, BI, and Machine Learning.
+The next major milestone is **evolving the current Data Lake into a Lakehouse architecture using MinIO/S3 and Apache Iceberg**.
+
+After that, the project will progress toward:
+
+```text
+MinIO / S3
+     ↓
+Apache Iceberg
+     ↓
+Spark + dbt
+     ↓
+Airflow
+     ↓
+Docker Compose
+     ↓
+BI
+     ↓
+Machine Learning
+```
