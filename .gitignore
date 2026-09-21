@@ -66,4 +66,16 @@ validation.py
 # dbt
 dbt_packages/
 target/
-logs/ 
+logs/   
+# Spark / Hive / Derby local metastore
+metastore_db/
+derby.log
+
+# dbt local state
+dbt/**/.user.yml
+dbt/**/target/
+dbt/**/logs/
+dbt/**/dbt_packages/
+
+# dbt profiles - credentials/config local
+dbt/**/profiles.yml
