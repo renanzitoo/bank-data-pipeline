@@ -2,8 +2,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, trim, upper, lit, when
 
 
-BRONZE_PATH = "data/bronze/accounts"
-BRONZE_CUSTOMERS_PATH = "data/bronze/customers"
+BRONZE_PATH = "s3a://banking/bronze/accounts"
+BRONZE_CUSTOMERS_PATH = "s3a://banking/bronze/customers"
 
 SILVER_PATH = "data/silver/accounts"
 QUARANTINE_PATH = "data/quarantine/accounts"
@@ -26,9 +26,32 @@ def create_spark_session():
         SparkSession.builder
         .appName("BankingAccountsSilver")
         .master("local[*]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://localhost:9000",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1",
+        )
         .getOrCreate()
     )
-
 
 def transform_accounts(df):
     return (

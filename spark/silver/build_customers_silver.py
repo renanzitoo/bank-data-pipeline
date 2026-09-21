@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, trim, upper, lower, lit, when
 
 
-BRONZE_PATH = "data/bronze/customers"
+BRONZE_PATH = "s3a://banking/bronze/customers"
 SILVER_PATH = "data/silver/customers"
 QUARANTINE_PATH = "data/quarantine/customers"
 
@@ -19,6 +19,30 @@ def create_spark_session():
         SparkSession.builder
         .appName("BankingCustomersSilver")
         .master("local[*]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://localhost:9000",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1",
+        )
         .getOrCreate()
     )
 
@@ -50,19 +74,23 @@ def validate_customers(df):
                 lit("NULL_CUSTOMER_ID")
             )
             .when(
-                col("first_name").isNull() | (trim(col("first_name")) == ""),
+                col("first_name").isNull()
+                | (trim(col("first_name")) == ""),
                 lit("INVALID_FIRST_NAME")
             )
             .when(
-                col("last_name").isNull() | (trim(col("last_name")) == ""),
+                col("last_name").isNull()
+                | (trim(col("last_name")) == ""),
                 lit("INVALID_LAST_NAME")
             )
             .when(
-                col("document").isNull() | (trim(col("document")) == ""),
+                col("document").isNull()
+                | (trim(col("document")) == ""),
                 lit("INVALID_DOCUMENT")
             )
             .when(
-                col("email").isNull() | (trim(col("email")) == ""),
+                col("email").isNull()
+                | (trim(col("email")) == ""),
                 lit("INVALID_EMAIL")
             )
             .when(
@@ -88,7 +116,7 @@ def validate_customers(df):
 def main():
     spark = create_spark_session()
 
-    print("Reading Bronze customers...")
+    print("Reading Bronze customers from MinIO...")
     customers = spark.read.parquet(BRONZE_PATH)
 
     print(f"Bronze records: {customers.count():,}")

@@ -2,8 +2,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, trim, upper, lit, when
 
 
-BRONZE_PATH = "data/bronze/loan_payments"
-BRONZE_LOANS_PATH = "data/bronze/loans"
+BRONZE_PATH = "s3a://banking/bronze/loan_payments"
+BRONZE_LOANS_PATH = "s3a://banking/bronze/loans"
 
 SILVER_PATH = "data/silver/loan_payments"
 QUARANTINE_PATH = "data/quarantine/loan_payments"
@@ -15,12 +15,35 @@ VALID_STATUSES = [
     "LATE",
 ]
 
-
 def create_spark_session():
     return (
         SparkSession.builder
-        .appName("BankingLoanPaymentsSilver")
+        .appName("BankingAccountsSilver")
         .master("local[*]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://localhost:9000",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1",
+        )
         .getOrCreate()
     )
 
