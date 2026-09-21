@@ -6,6 +6,6 @@ SELECT
     state,
     created_at
 FROM read_parquet(
-    '../../data/silver/merchants/**/*.parquet',
+    's3://banking/silver/merchants/**/*.parquet',
     hive_partitioning = true
 )

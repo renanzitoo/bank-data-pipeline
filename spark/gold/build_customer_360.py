@@ -8,24 +8,56 @@ from pyspark.sql.functions import (
 )
 
 
-CUSTOMERS_PATH = "data/silver/customers"
-ACCOUNTS_PATH = "data/silver/accounts"
-TRANSACTIONS_PATH = "data/silver/transactions"
-CARDS_PATH = "data/silver/cards"
-LOANS_PATH = "data/silver/loans"
-PAYMENTS_PATH = "data/silver/loan_payments"
 
-GOLD_PATH = "data/gold/customer_360"
+CUSTOMERS_PATH = "s3a://banking/silver/customers"
+ACCOUNTS_PATH = "s3a://banking/silver/accounts"
+TRANSACTIONS_PATH = "s3a://banking/silver/transactions"
+CARDS_PATH = "s3a://banking/silver/cards"
+LOANS_PATH = "s3a://banking/silver/loans"
+PAYMENTS_PATH = "s3a://banking/silver/loan_payments"
+
+GOLD_PATH = "s3a://banking/gold/customer_360"
 
 
 def create_spark_session():
-
     return (
         SparkSession.builder
-        .appName("BankingGoldCustomer360")
-        .master("local[*]")
+        .appName("BankingGoldDailyTransactionSummary")
+        .master("local[4]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://localhost:9000"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1"
+        )
+        .config(
+            "spark.sql.shuffle.partitions",
+            "100"
+        )
+        .config(
+            "spark.default.parallelism",
+            "100"
+        )
         .getOrCreate()
-    )
+    )   
 
 
 def build_account_metrics(accounts):

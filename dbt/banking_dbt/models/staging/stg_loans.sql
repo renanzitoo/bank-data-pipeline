@@ -8,6 +8,6 @@ SELECT
     status,
     created_at
 FROM read_parquet(
-    '../../data/silver/loans/**/*.parquet',
+    's3://banking/silver/loans/**/*.parquet',
     hive_partitioning = true
 )

@@ -4,14 +4,15 @@ from pyspark.sql.functions import (
     trim,
     upper,
     when,
-    lit
+    lit,
 )
+from pyspark import StorageLevel
 
 
 BRONZE_PATH = "s3a://banking/bronze/transactions"
 BRONZE_ACCOUNTS_PATH = "s3a://banking/bronze/accounts"
 
-SILVER_PATH = "data/silver/transactions"
+SILVER_PATH = "s3a://banking/silver/transactions"
 QUARANTINE_PATH = "data/quarantine/transactions"
 
 
@@ -36,31 +37,39 @@ VALID_STATUSES = [
 def create_spark_session():
     return (
         SparkSession.builder
-        .appName("BankingAccountsSilver")
-        .master("local[*]")
+        .appName("BankingSilverTransactions")
+        .master("local[4]")
         .config(
             "spark.hadoop.fs.s3a.endpoint",
-            "http://localhost:9000",
+            "http://localhost:9000"
         )
         .config(
             "spark.hadoop.fs.s3a.access.key",
-            "banking",
+            "banking"
         )
         .config(
             "spark.hadoop.fs.s3a.secret.key",
-            "banking_dev",
+            "banking_dev"
         )
         .config(
             "spark.hadoop.fs.s3a.path.style.access",
-            "true",
+            "true"
         )
         .config(
             "spark.hadoop.fs.s3a.connection.ssl.enabled",
-            "false",
+            "false"
         )
         .config(
             "spark.hadoop.fs.s3a.endpoint.region",
-            "us-east-1",
+            "us-east-1"
+        )
+        .config(
+            "spark.sql.shuffle.partitions",
+            "200"
+        )
+        .config(
+            "spark.default.parallelism",
+            "200"
         )
         .getOrCreate()
     )
@@ -89,15 +98,21 @@ def validate_transactions(df):
                 lit("INVALID_CURRENCY")
             )
             .when(
-                ~col("transaction_type").isin(VALID_TRANSACTION_TYPES),
+                ~col("transaction_type").isin(
+                    VALID_TRANSACTION_TYPES
+                ),
                 lit("INVALID_TRANSACTION_TYPE")
             )
             .when(
-                ~col("status").isin(VALID_STATUSES),
+                ~col("status").isin(
+                    VALID_STATUSES
+                ),
                 lit("INVALID_STATUS")
             )
             .when(
-                (col("transaction_type") == "CARD_PURCHASE")
+                (
+                    col("transaction_type") == "CARD_PURCHASE"
+                )
                 & col("merchant_id").isNull(),
                 lit("MISSING_MERCHANT_ID")
             )
@@ -151,35 +166,53 @@ def main():
     spark = create_spark_session()
 
     print("Reading Bronze transactions...")
-    transactions = spark.read.parquet(BRONZE_PATH)
+
+    transactions = (
+        spark.read
+        .parquet(BRONZE_PATH)
+    )
 
     print("Reading Bronze accounts...")
-    accounts = spark.read.parquet(BRONZE_ACCOUNTS_PATH)
 
-    print(f"Account records: {accounts.count():,}")
-    print(f"Bronze records: {transactions.count():,}")
+    accounts = (
+        spark.read
+        .parquet(BRONZE_ACCOUNTS_PATH)
+        .select("account_id")
+        .dropDuplicates()
+    )
 
     print("Transforming transactions...")
-    transactions = transform_transactions(transactions)
+
+    transactions = transform_transactions(
+        transactions
+    )
 
     print("Validating data quality...")
-    validated = validate_transactions(transactions)
+
+    validated = validate_transactions(
+        transactions
+    )
+
+    # Liberamos a referência do DataFrame original
+    transactions.unpersist(blocking=False)
 
     print("Validating account references...")
 
     account_reference = (
         accounts
         .select(
-            col("account_id").alias("valid_account_id")
+            col("account_id").alias(
+                "valid_account_id"
+            )
         )
-        .dropDuplicates()
     )
 
     validated = (
         validated
         .join(
             account_reference,
-            validated.account_id == col("valid_account_id"),
+            validated.account_id
+            == col("valid_account_id"),
             "left"
         )
         .withColumn(
@@ -232,42 +265,97 @@ def main():
         .drop("is_duplicate")
     )
 
-    valid = validated.filter(
-        col("quality_error").isNull()
-    )
-
-    invalid = validated.filter(
-        col("quality_error").isNotNull()
+    # Persistimos em disco + memória.
+    # Isso evita que o Spark refaça todos os joins/shuffles
+    # toda vez que valid ou invalid for utilizado.
+    validated = validated.persist(
+        StorageLevel.MEMORY_AND_DISK
     )
 
     print("Generating Data Quality Report...")
 
-    valid_count = valid.count()
-    invalid_count = invalid.count()
-    total_count = valid_count + invalid_count
+    # Calculamos as quantidades através de uma única agregação.
+    quality_counts = (
+        validated
+        .select(
+            when(
+                col("quality_error").isNull(),
+                lit(1)
+            )
+            .otherwise(lit(0))
+            .alias("valid"),
+
+            when(
+                col("quality_error").isNotNull(),
+                lit(1)
+            )
+            .otherwise(lit(0))
+            .alias("invalid")
+        )
+        .agg(
+            {"valid": "sum", "invalid": "sum"}
+        )
+        .collect()[0]
+    )
+
+    valid_count = (
+        quality_counts["sum(valid)"]
+        or 0
+    )
+
+    invalid_count = (
+        quality_counts["sum(invalid)"]
+        or 0
+    )
+
+    total_count = (
+        valid_count
+        + invalid_count
+    )
 
     print()
     print("=" * 40)
     print("       DATA QUALITY REPORT")
     print("=" * 40)
-    print(f"Total records:       {total_count:,}")
-    print(f"Valid records:       {valid_count:,}")
-    print(f"Invalid records:     {invalid_count:,}")
+
+    print(
+        f"Total records:       {total_count:,}"
+    )
+
+    print(
+        f"Valid records:       {valid_count:,}"
+    )
+
+    print(
+        f"Invalid records:     {invalid_count:,}"
+    )
+
     print()
 
     print("Errors:")
 
     if invalid_count == 0:
-        print("  No quality errors found.")
+
+        print(
+            "  No quality errors found."
+        )
+
     else:
+
         error_counts = (
-            invalid
+            validated
+            .filter(
+                col("quality_error").isNotNull()
+            )
             .groupBy("quality_error")
             .count()
-            .orderBy(col("count").desc())
+            .orderBy(
+                col("count").desc()
+            )
         )
 
         for row in error_counts.collect():
+
             print(
                 f"  {row['quality_error']:<30} "
                 f"{row['count']:,}"
@@ -278,25 +366,57 @@ def main():
 
     print("Writing Quarantine...")
 
+    invalid = (
+        validated
+        .filter(
+            col("quality_error").isNotNull()
+        )
+    )
+
     (
-        invalid.write
+        invalid
+        .write
         .mode("overwrite")
-        .partitionBy("year", "month")
-        .parquet(QUARANTINE_PATH)
+        .partitionBy(
+            "year",
+            "month"
+        )
+        .parquet(
+            QUARANTINE_PATH
+        )
     )
 
     print("Writing Silver...")
 
-    (
-        valid
+    valid = (
+        validated
+        .filter(
+            col("quality_error").isNull()
+        )
         .drop("quality_error")
-        .write
-        .mode("overwrite")
-        .partitionBy("year", "month")
-        .parquet(SILVER_PATH)
     )
 
-    print("Silver transactions completed.")
+    (
+        valid
+        .write
+        .mode("overwrite")
+        .partitionBy(
+            "year",
+            "month"
+        )
+        .parquet(
+            SILVER_PATH
+        )
+    )
+
+    print()
+    print(
+        "Silver transactions completed."
+    )
+
+    validated.unpersist(
+        blocking=True
+    )
 
     spark.stop()
 

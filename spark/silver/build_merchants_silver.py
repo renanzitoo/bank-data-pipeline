@@ -8,7 +8,7 @@ from pyspark.sql.functions import (
 )
 
 BRONZE_PATH = "s3a://banking/bronze/merchants"
-SILVER_PATH = "data/silver/merchants"
+SILVER_PATH = "s3a://banking/silver/merchants"
 QUARANTINE_PATH = "data/quarantine/merchants"
 
 

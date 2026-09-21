@@ -9,20 +9,51 @@ from pyspark.sql.functions import (
 )
 
 
-TRANSACTIONS_PATH = "data/silver/transactions"
-MERCHANTS_PATH = "data/silver/merchants"
+TRANSACTIONS_PATH = "s3a://banking/silver/transactions"
+MERCHANTS_PATH = "s3a://banking/silver/merchants"
 
-GOLD_PATH = "data/gold/merchant_performance"
+GOLD_PATH = "s3a://banking/gold/merchant_performance"
 
 
 def create_spark_session():
-
     return (
         SparkSession.builder
-        .appName("BankingGoldMerchantPerformance")
-        .master("local[*]")
+        .appName("BankingGoldDailyTransactionSummary")
+        .master("local[4]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://localhost:9000"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1"
+        )
+        .config(
+            "spark.sql.shuffle.partitions",
+            "100"
+        )
+        .config(
+            "spark.default.parallelism",
+            "100"
+        )
         .getOrCreate()
-    )
+    )   
 
 
 def build_merchant_performance(

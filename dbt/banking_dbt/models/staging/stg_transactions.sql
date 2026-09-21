@@ -9,6 +9,6 @@ SELECT
     merchant_id,
     description
 FROM read_parquet(
-    '../../data/silver/transactions/**/*.parquet',
+    's3://banking/silver/transactions/**/*.parquet',
     hive_partitioning = true
 )

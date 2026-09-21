@@ -11,6 +11,6 @@ SELECT
   customer_segment,
   created_at,
 FROM read_parquet(
-  '../../data/silver/customers/**/*.parquet',
+  's3://banking/silver/customers/**/*.parquet',
   hive_partitioning = true
 )

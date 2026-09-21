@@ -7,6 +7,6 @@ SELECT
     amount,
     status
 FROM read_parquet(
-    '../../data/silver/loan_payments/**/*.parquet',
+    's3://banking/silver/loan_payments/**/*.parquet',
     hive_partitioning = true
 )

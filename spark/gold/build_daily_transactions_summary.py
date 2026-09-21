@@ -10,16 +10,47 @@ from pyspark.sql.functions import (
 )
 
 
-SILVER_PATH = "data/silver/transactions"
-GOLD_PATH = "data/gold/daily_transaction_summary"
+SILVER_PATH = "s3a://banking/silver/transactions"
+GOLD_PATH = "s3a://banking/gold/daily_transaction_summary"
 
 
 def create_spark_session():
-
     return (
         SparkSession.builder
         .appName("BankingGoldDailyTransactionSummary")
-        .master("local[*]")
+        .master("local[4]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://localhost:9000"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false"
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1"
+        )
+        .config(
+            "spark.sql.shuffle.partitions",
+            "100"
+        )
+        .config(
+            "spark.default.parallelism",
+            "100"
+        )
         .getOrCreate()
     )
 

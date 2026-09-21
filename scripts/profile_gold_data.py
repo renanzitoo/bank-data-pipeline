@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -8,8 +6,8 @@ from pyspark.sql.functions import (
 )
 
 
-SILVER_DIR = Path("data/silver")
-GOLD_DIR = Path("data/gold")
+SILVER_DIR = "s3a://banking/silver"
+GOLD_DIR = "s3a://banking/gold"
 
 
 def create_spark_session():
@@ -18,6 +16,18 @@ def create_spark_session():
         SparkSession.builder
         .appName("BankingGoldQA")
         .master("local[*]")
+        .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000")
+        .config("spark.hadoop.fs.s3a.access.key", "banking")
+        .config("spark.hadoop.fs.s3a.secret.key", "banking_dev")
+        .config(
+            "spark.hadoop.fs.s3a.aws.credentials.provider",
+            "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+        )
+        .config("spark.hadoop.fs.s3a.path.style.access", "true")
+        .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+        .config("spark.hadoop.fs.s3a.endpoint.region", "us-east-1")
+        .config("spark.sql.shuffle.partitions", "100")
+        .config("spark.default.parallelism", "100")
         .getOrCreate()
     )
 
@@ -629,76 +639,49 @@ def main():
     print("Reading Silver datasets...")
 
     customers = spark.read.parquet(
-        str(
-            SILVER_DIR / "customers"
-        )
+        f"{SILVER_DIR}/customers"
     )
 
     accounts = spark.read.parquet(
-        str(
-            SILVER_DIR / "accounts"
-        )
+        f"{SILVER_DIR}/accounts"
     )
 
     transactions = spark.read.parquet(
-        str(
-            SILVER_DIR / "transactions"
-        )
+        f"{SILVER_DIR}/transactions"
     )
 
     cards = spark.read.parquet(
-        str(
-            SILVER_DIR / "cards"
-        )
+        f"{SILVER_DIR}/cards"
     )
 
     loans = spark.read.parquet(
-        str(
-            SILVER_DIR / "loans"
-        )
+        f"{SILVER_DIR}/loans"
     )
 
     payments = spark.read.parquet(
-        str(
-            SILVER_DIR / "loan_payments"
-        )
+        f"{SILVER_DIR}/loan_payments"
     )
 
     print("Reading Gold datasets...")
 
     daily_transactions = spark.read.parquet(
-        str(
-            GOLD_DIR
-            / "daily_transaction_summary"
-        )
+        f"{GOLD_DIR}/daily_transaction_summary"
     )
 
     customer_transactions = spark.read.parquet(
-        str(
-            GOLD_DIR
-            / "customer_transaction_metrics"
-        )
+        f"{GOLD_DIR}/customer_transaction_metrics"
     )
 
     merchant_performance = spark.read.parquet(
-        str(
-            GOLD_DIR
-            / "merchant_performance"
-        )
+        f"{GOLD_DIR}/merchant_performance"
     )
 
     loan_portfolio = spark.read.parquet(
-        str(
-            GOLD_DIR
-            / "loan_portfolio"
-        )
+        f"{GOLD_DIR}/loan_portfolio"
     )
 
     customer_360 = spark.read.parquet(
-        str(
-            GOLD_DIR
-            / "customer_360"
-        )
+        f"{GOLD_DIR}/customer_360"
     )
 
     # --------------------------------------------------

@@ -8,6 +8,6 @@ SELECT
     issued_at,
     expires_at
 FROM read_parquet(
-    '../../data/silver/cards/**/*.parquet',
+    's3://banking/silver/cards/**/*.parquet',
     hive_partitioning = true
 )

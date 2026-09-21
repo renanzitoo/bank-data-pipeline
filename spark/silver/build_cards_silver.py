@@ -5,7 +5,7 @@ from pyspark.sql.functions import col, trim, upper, lit, when
 BRONZE_PATH = "s3a://banking/bronze/cards"
 BRONZE_ACCOUNTS_PATH = "s3a://banking/bronze/accounts"
 
-SILVER_PATH = "data/silver/cards"
+SILVER_PATH = "s3a://banking/silver/cards"
 QUARANTINE_PATH = "data/quarantine/cards"
 
 

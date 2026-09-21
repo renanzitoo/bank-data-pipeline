@@ -8,6 +8,6 @@ SELECT
     opened_at,
     closed_at
 FROM read_parquet(
-    '../../data/silver/accounts/**/*.parquet',
+    's3://banking/silver/accounts/**/*.parquet',
     hive_partitioning = true
 )
