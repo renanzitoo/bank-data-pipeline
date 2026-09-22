@@ -42,49 +42,37 @@ VALID_STATUSES = [
 # SPARK
 # ============================================================
 
-def create_spark_session():
+import os
 
+def create_spark_session():
     return (
         SparkSession.builder
-        .appName("BankingSilverLoans")
-        .master("local[4]")
-
-        # MinIO / S3A
+        .appName("BankingAccountsSilver")
+        .master("local[*]")
         .config(
             "spark.hadoop.fs.s3a.endpoint",
-            "http://localhost:9000"
+            f"http://{os.getenv('MINIO_ENDPOINT', 'minio:9000')}",
         )
         .config(
             "spark.hadoop.fs.s3a.access.key",
-            "banking"
+            os.getenv("MINIO_ACCESS_KEY", "banking"),
         )
         .config(
             "spark.hadoop.fs.s3a.secret.key",
-            "banking_dev"
+            os.getenv("MINIO_SECRET_KEY", "banking_dev"),
         )
         .config(
             "spark.hadoop.fs.s3a.path.style.access",
-            "true"
+            "true",
         )
         .config(
             "spark.hadoop.fs.s3a.connection.ssl.enabled",
-            "false"
+            "false",
         )
         .config(
             "spark.hadoop.fs.s3a.endpoint.region",
-            "us-east-1"
+            "us-east-1",
         )
-
-        # Spark
-        .config(
-            "spark.sql.shuffle.partitions",
-            "100"
-        )
-        .config(
-            "spark.default.parallelism",
-            "100"
-        )
-
         .getOrCreate()
     )
 

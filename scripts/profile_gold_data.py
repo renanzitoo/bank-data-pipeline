@@ -16,7 +16,7 @@ def create_spark_session():
         SparkSession.builder
         .appName("BankingGoldQA")
         .master("local[*]")
-        .config("spark.hadoop.fs.s3a.endpoint", "http://localhost:9000")
+        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000")
         .config("spark.hadoop.fs.s3a.access.key", "banking")
         .config("spark.hadoop.fs.s3a.secret.key", "banking_dev")
         .config(

@@ -1,4 +1,3 @@
-from pathlib import Path
 from time import perf_counter
 
 from pyspark.sql import SparkSession
@@ -14,53 +13,79 @@ from pyspark.sql.functions import (
 )
 
 
-SILVER_DIR = Path("data/silver")
+SILVER_DIR = "s3a://banking/silver"
 
 
 DATASETS = {
     "customers": {
-        "path": SILVER_DIR / "customers",
+        "path": f"{SILVER_DIR}/customers",
         "primary_key": "customer_id",
     },
     "accounts": {
-        "path": SILVER_DIR / "accounts",
+        "path": f"{SILVER_DIR}/accounts",
         "primary_key": "account_id",
     },
     "merchants": {
-        "path": SILVER_DIR / "merchants",
+        "path": f"{SILVER_DIR}/merchants",
         "primary_key": "merchant_id",
     },
     "transactions": {
-        "path": SILVER_DIR / "transactions",
+        "path": f"{SILVER_DIR}/transactions",
         "primary_key": "transaction_id",
     },
     "cards": {
-        "path": SILVER_DIR / "cards",
+        "path": f"{SILVER_DIR}/cards",
         "primary_key": "card_id",
     },
     "loans": {
-        "path": SILVER_DIR / "loans",
+        "path": f"{SILVER_DIR}/loans",
         "primary_key": "loan_id",
     },
     "loan_payments": {
-        "path": SILVER_DIR / "loan_payments",
+        "path": f"{SILVER_DIR}/loan_payments",
         "primary_key": "payment_id",
     },
 }
 
 
 def create_spark_session():
-
     return (
         SparkSession.builder
         .appName("BankingSilverQA")
         .master("local[*]")
+        .config(
+            "spark.hadoop.fs.s3a.endpoint",
+            "http://minio:9000",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.access.key",
+            "banking",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.secret.key",
+            "banking_dev",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.aws.credentials.provider",
+            "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.path.style.access",
+            "true",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.connection.ssl.enabled",
+            "false",
+        )
+        .config(
+            "spark.hadoop.fs.s3a.endpoint.region",
+            "us-east-1",
+        )
         .getOrCreate()
     )
 
 
 def print_header(title):
-
     print()
     print("=" * 70)
     print(title)
@@ -68,7 +93,6 @@ def print_header(title):
 
 
 def test_primary_key(df, primary_key):
-
     total = df.count()
 
     distinct_keys = (
@@ -100,13 +124,12 @@ def test_primary_key(df, primary_key):
 
 
 def test_dataset(spark, name, config):
-
     print_header(f"DATASET: {name.upper()}")
 
     start = perf_counter()
 
     df = spark.read.parquet(
-        str(config["path"])
+        config["path"]
     )
 
     results = test_primary_key(
@@ -122,7 +145,6 @@ def test_dataset(spark, name, config):
 
 
 def test_nulls(df, columns):
-
     print("NULL analysis:")
 
     expressions = [
@@ -137,7 +159,6 @@ def test_nulls(df, columns):
     ).collect()[0]
 
     for column in columns:
-
         value = result[column]
 
         print(
@@ -146,7 +167,6 @@ def test_nulls(df, columns):
 
 
 def test_transactions(df):
-
     print_header("TRANSACTION ANALYSIS")
 
     print("Transaction types:")
@@ -211,7 +231,6 @@ def test_transactions(df):
 
 
 def test_cards(df):
-
     print_header("CARD ANALYSIS")
 
     print("Card types:")
@@ -269,7 +288,6 @@ def test_cards(df):
 
 
 def test_loans(df):
-
     print_header("LOAN ANALYSIS")
 
     print("Loan types:")
@@ -313,7 +331,6 @@ def test_loans(df):
 
 
 def test_loan_payments(df):
-
     print_header("LOAN PAYMENT ANALYSIS")
 
     print("Payment statuses:")
@@ -376,7 +393,6 @@ def test_foreign_key(
     parent_key,
     relationship_name,
 ):
-
     parent_keys = (
         parent_df
         .select(
@@ -390,7 +406,7 @@ def test_foreign_key(
         .join(
             parent_keys,
             col(child_key) == col("_parent_key"),
-            "left"
+            "left",
         )
         .filter(
             col("_parent_key").isNull()
@@ -405,7 +421,6 @@ def test_foreign_key(
 
 
 def test_referential_integrity(datasets):
-
     print_header("REFERENTIAL INTEGRITY")
 
     test_foreign_key(
@@ -460,7 +475,6 @@ def test_referential_integrity(datasets):
 
 
 def test_business_rules(datasets):
-
     print_header("BUSINESS RULES")
 
     cards = datasets["cards"]
@@ -535,7 +549,6 @@ def test_business_rules(datasets):
 
 
 def main():
-
     spark = create_spark_session()
 
     print_header(

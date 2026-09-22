@@ -20,7 +20,7 @@ def create_spark_session():
         .master("local[4]")
         .config(
             "spark.hadoop.fs.s3a.endpoint",
-            "http://localhost:9000"
+            "http://minio:9000"
         )
         .config(
             "spark.hadoop.fs.s3a.access.key",

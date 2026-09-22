@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -8,7 +9,7 @@ import pyarrow.parquet as pq
 
 GENERATED_DIR = Path("data/generated")
 
-MINIO_BUCKET = "banking"
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "banking")
 BRONZE_PREFIX = "bronze"
 
 BATCH_SIZE = 500_000
@@ -26,10 +27,40 @@ DATASETS = {
 
 
 def create_minio_filesystem():
+    """
+    Creates a PyArrow S3 filesystem connected to MinIO.
+
+    Inside Docker:
+        minio:9000
+
+    Locally:
+        localhost:9000
+    """
+
+    endpoint = os.getenv(
+        "MINIO_ENDPOINT",
+        "minio:9000",
+    )
+
+    access_key = os.getenv(
+        "MINIO_ACCESS_KEY",
+        "banking",
+    )
+
+    secret_key = os.getenv(
+        "MINIO_SECRET_KEY",
+        "banking_dev",
+    )
+
+    print("MinIO configuration:")
+    print(f"  Endpoint: {endpoint}")
+    print(f"  Bucket: {MINIO_BUCKET}")
+    print(f"  Access key: {access_key}")
+
     return pafs.S3FileSystem(
-        access_key="banking",
-        secret_key="banking_dev",
-        endpoint_override="localhost:9000",
+        access_key=access_key,
+        secret_key=secret_key,
+        endpoint_override=endpoint,
         scheme="http",
     )
 
@@ -68,14 +99,25 @@ def build_partitioned_dataset(
         f"{MINIO_BUCKET}/{BRONZE_PREFIX}/{name}"
     )
 
-    print(f"\nProcessing {name}...")
+    print()
+    print("=" * 70)
+    print(f"Processing {name}...")
     print(f"Source: {source_path}")
     print(f"Destination: s3://{destination}")
+    print("=" * 70)
+
+    if not source_path.exists():
+        raise FileNotFoundError(
+            f"Source dataset not found: {source_path}"
+        )
 
     parquet_file = pq.ParquetFile(source_path)
 
     total_rows = parquet_file.metadata.num_rows
     processed_rows = 0
+
+    print(f"Total rows: {total_rows:,}")
+    print(f"Batch size: {BATCH_SIZE:,}")
 
     for batch in parquet_file.iter_batches(
         batch_size=BATCH_SIZE
@@ -87,6 +129,12 @@ def build_partitioned_dataset(
         date_index = table.schema.get_field_index(
             date_column
         )
+
+        if date_index == -1:
+            raise ValueError(
+                f"Date column '{date_column}' "
+                f"not found in dataset '{name}'"
+            )
 
         date_array = table.column(date_index)
 
@@ -110,8 +158,8 @@ def build_partitioned_dataset(
         ):
             partition_path = (
                 f"{destination}/"
-                f"year={year}/"
-                f"month={month:02d}"
+                f"year={int(year)}/"
+                f"month={int(month):02d}"
             )
 
             partition = partition.drop(
@@ -154,6 +202,11 @@ def build_partitioned_dataset(
 
 def main():
 
+    print()
+    print("=" * 70)
+    print("BANKING DATA LAKEHOUSE - BRONZE")
+    print("=" * 70)
+
     s3 = create_minio_filesystem()
 
     for name, date_column in DATASETS.items():
@@ -163,8 +216,13 @@ def main():
             s3,
         )
 
+    print()
+    print("=" * 70)
+    print("BRONZE LAYER COMPLETED")
+    print("=" * 70)
     print(
-        "\nBronze layer written to MinIO successfully."
+        "All datasets were successfully "
+        "written to MinIO."
     )
 
 

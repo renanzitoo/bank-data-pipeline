@@ -21,7 +21,7 @@ def create_spark_session():
         .master("local[4]")
         .config(
             "spark.hadoop.fs.s3a.endpoint",
-            "http://localhost:9000"
+            "http://minio:9000"
         )
         .config(
             "spark.hadoop.fs.s3a.access.key",
@@ -52,7 +52,7 @@ def create_spark_session():
             "100"
         )
         .getOrCreate()
-    )
+    )   
 
 
 def build_daily_transaction_summary(df):

@@ -9,13 +9,45 @@ services:
       - "9001:9001"
 
     environment:
-      MINIO_ROOT_USER: banking
-      MINIO_ROOT_PASSWORD: banking_dev
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
 
     volumes:
       - minio_data:/data
 
     command: server /data --console-address ":9001"
+
+    restart: unless-stopped
+
+
+  spark:
+    build:
+      context: ./docker/spark
+
+    container_name: banking-spark
+
+    depends_on:
+      - minio
+
+    volumes:
+      - ./spark:/workspace/spark
+      - ./scripts:/workspace/scripts
+      - ./data:/workspace/data
+      - ./iceberg:/workspace/iceberg
+
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+
+    working_dir: /workspace
+
+    command: ["tail", "-f", "/dev/null"]
+
+    stdin_open: true
+    tty: true
+
 
 volumes:
   minio_data:
