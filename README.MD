@@ -1,56 +1,56 @@
-**# 🏦 Banking Data Lakehouse**
+# 🏦 Banking Data Lakehouse
 
 A data engineering project that simulates a modern banking data platform, focusing on data ingestion, distributed processing, data quality, Medallion architecture, analytical data modeling, dbt transformations, and Lakehouse technologies.
 
 The project uses completely synthetic banking data to simulate a real-world environment containing customers, accounts, transactions, cards, merchants, loans, and loan payments.
 
-\> 🚧 **\*\*Project Status:\*\*** Active Development — End-to-End Data Engineering Pipeline Operational
+> 🚧 **Project Status:** Active Development — End-to-End Data Engineering Pipeline Operational
 
-\---
+---
 
-**# 🎯 Project Goal**
+# 🎯 Project Goal
 
 The main goal of this project is to build an end-to-end banking data platform capable of:
 
-\* Generating realistic synthetic banking data
+* Generating realistic synthetic banking data
 
-\* Ingesting and processing large datasets
+* Ingesting and processing large datasets
 
-\* Storing data in a Data Lake architecture
+* Storing data in a Data Lake architecture
 
-\* Processing large datasets with Apache Spark
+* Processing large datasets with Apache Spark
 
-\* Implementing Bronze, Silver, and Gold layers
+* Implementing Bronze, Silver, and Gold layers
 
-\* Applying data quality and business rules
+* Applying data quality and business rules
 
-\* Detecting and isolating invalid records
+* Detecting and isolating invalid records
 
-\* Building analytical data models
+* Building analytical data models
 
-\* Implementing transformation workflows with dbt
+* Implementing transformation workflows with dbt
 
-\* Applying automated data tests
+* Applying automated data tests
 
-\* Documenting analytical data models
+* Documenting analytical data models
 
-\* Preparing the platform for a Lakehouse architecture
+* Preparing the platform for a Lakehouse architecture
 
-\* Supporting analytics and machine learning workloads
+* Supporting analytics and machine learning workloads
 
-\* Orchestrating the complete pipeline
+* Orchestrating the complete pipeline
 
 The project is designed to demonstrate practical Data Engineering concepts rather than simply building a traditional database.
 
-\---
+---
 
-**# 🏗️ Architecture**
+# 🏗️ Architecture
 
 The project follows a Medallion-style Data Lake architecture.
 
 The current implementation includes a complete Spark-based ETL pipeline, data quality validation, Gold analytical models, Apache Iceberg tables on MinIO/S3, and Airflow orchestration.
 
-\`\`\`text
+```text
 
                          DATA SOURCES
 
@@ -140,77 +140,77 @@ The current implementation includes a complete Spark-based ETL pipeline, data qu
 
                  Airflow
 
-\`\`\`
+```
 
-\---
+---
 
-**# 🛠️ Technology Stack**
+# 🛠️ Technology Stack
 
-**## Data Generation**
+## Data Generation
 
-\* Python
+* Python
 
-\* Faker
+* Faker
 
-\* NumPy
+* NumPy
 
-\* Pandas
+* Pandas
 
-\* PyArrow
+* PyArrow
 
-**## Data Processing**
+## Data Processing
 
-\* Apache Spark
+* Apache Spark
 
-\* PySpark
+* PySpark
 
-**## Storage**
+## Storage
 
-\* Apache Parquet
+* Apache Parquet
 
-\* MinIO / S3 *\*(planned)\**
+* MinIO / S3 **(planned)**
 
-**## Lakehouse**
+## Lakehouse
 
-\* Apache Iceberg *\*(planned)\**
+* Apache Iceberg **(planned)**
 
-**## Transformation**
+## Transformation
 
-\* dbt Core
+* dbt Core
 
-\* dbt-duckdb
+* dbt-duckdb
 
-\* DuckDB
+* DuckDB
 
-**## Orchestration**
+## Orchestration
 
-\* Apache Airflow *\*(planned)\**
+* Apache Airflow **(planned)**
 
-**## Infrastructure**
+## Infrastructure
 
-\* Docker
+* Docker
 
-\* Docker Compose *\*(planned)\**
+* Docker Compose **(planned)**
 
-**## Analytics**
+## Analytics
 
-\* BigQuery *\*(planned)\**
+* BigQuery **(planned)**
 
-\* Looker Studio / Metabase *\*(planned)\**
+* Looker Studio / Metabase **(planned)**
 
-**## Machine Learning**
+## Machine Learning
 
-\* Python
+* Python
 
-\* Scikit-learn *\*(planned)\**
+* Scikit-learn **(planned)**
 
-\---
+---
 
-**# 📊 Data Domain**
+# 📊 Data Domain
 
 The simulated banking environment contains the following entities:
 
-\`\`\`text
+```text
 
                          CUSTOMER
 
@@ -236,13 +236,13 @@ The simulated banking environment contains the following entities:
 
                        MERCHANT
 
-\`\`\`
+```
 
-**## Customers**
+## Customers
 
 Contains customer information and segmentation.
 
-\`\`\`text
+```text
 
 customer_id
 
@@ -266,11 +266,11 @@ customer_segment
 
 created_at
 
-\`\`\`
+```
 
 Customer segments:
 
-\`\`\`text
+```text
 
 BASIC
 
@@ -278,13 +278,13 @@ STANDARD
 
 PREMIUM
 
-\`\`\`
+```
 
-**## Accounts**
+## Accounts
 
 Represents customer bank accounts.
 
-\`\`\`text
+```text
 
 account_id
 
@@ -302,23 +302,23 @@ opened_at
 
 closed_at
 
-\`\`\`
+```
 
 Account types:
 
-\`\`\`text
+```text
 
 CHECKING
 
 SAVINGS
 
-\`\`\`
+```
 
-**## Transactions**
+## Transactions
 
 The largest dataset in the project.
 
-\`\`\`text
+```text
 
 transaction_id
 
@@ -338,11 +338,11 @@ merchant_id
 
 description
 
-\`\`\`
+```
 
 Transaction types include:
 
-\`\`\`text
+```text
 
 PIX
 
@@ -358,27 +358,27 @@ TED
 
 DOC
 
-\`\`\`
+```
 
 Business rules include:
 
-\* Every transaction must belong to an existing account.
+* Every transaction must belong to an existing account.
 
-\* Transaction amounts must be greater than zero.
+* Transaction amounts must be greater than zero.
 
-\* Currency must be BRL.
+* Currency must be BRL.
 
-\* \`CARD_PURCHASE\` transactions must have a valid \`merchant_id\`.
+* `CARD_PURCHASE` transactions must have a valid `merchant_id`.
 
-\* Other transaction types may have a NULL \`merchant_id\`.
+* Other transaction types may have a NULL `merchant_id`.
 
-\* Transaction IDs must be unique.
+* Transaction IDs must be unique.
 
-**## Merchants**
+## Merchants
 
 Represents establishments where card transactions can occur.
 
-\`\`\`text
+```text
 
 merchant_id
 
@@ -392,11 +392,11 @@ state
 
 created_at
 
-\`\`\`
+```
 
 Merchant categories include:
 
-\`\`\`text
+```text
 
 SUPERMARKET
 
@@ -418,13 +418,13 @@ SERVICES
 
 OTHER
 
-\`\`\`
+```
 
-**## Cards**
+## Cards
 
 Represents debit and credit cards associated with bank accounts.
 
-\`\`\`text
+```text
 
 card_id
 
@@ -442,23 +442,23 @@ issued_at
 
 expires_at
 
-\`\`\`
+```
 
 Business rules include:
 
-\* Savings accounts can only have debit cards.
+* Savings accounts can only have debit cards.
 
-\* Credit cards must have a credit limit.
+* Credit cards must have a credit limit.
 
-\* Debit cards do not have a credit limit.
+* Debit cards do not have a credit limit.
 
-\* Cards must belong to existing accounts.
+* Cards must belong to existing accounts.
 
-**## Loans**
+## Loans
 
 Represents customer loans.
 
-\`\`\`text
+```text
 
 loan_id
 
@@ -476,11 +476,11 @@ status
 
 created_at
 
-\`\`\`
+```
 
 Loan types:
 
-\`\`\`text
+```text
 
 PERSONAL
 
@@ -488,11 +488,11 @@ PAYROLL
 
 AUTO
 
-\`\`\`
+```
 
 Loan statuses:
 
-\`\`\`text
+```text
 
 ACTIVE
 
@@ -502,13 +502,13 @@ DEFAULTED
 
 CANCELLED
 
-\`\`\`
+```
 
-**## Loan Payments**
+## Loan Payments
 
 Represents individual loan installments.
 
-\`\`\`text
+```text
 
 payment_id
 
@@ -524,11 +524,11 @@ amount
 
 status
 
-\`\`\`
+```
 
 Payment statuses:
 
-\`\`\`text
+```text
 
 PAID
 
@@ -536,11 +536,11 @@ PENDING
 
 LATE
 
-\`\`\`
+```
 
-\---
+---
 
-**# 📦 Synthetic Dataset**
+# 📦 Synthetic Dataset
 
 The current project generates:
 
@@ -566,11 +566,11 @@ All data is completely synthetic and generated locally.
 
 Generated datasets are intentionally excluded from version control because of their size.
 
-\---
+---
 
-**# 📁 Project Structure**
+# 📁 Project Structure
 
-\`\`\`text
+```text
 
 banking-data-lakehouse/
 
@@ -624,7 +624,7 @@ banking-data-lakehouse/
 
 │   │   ├── build_accounts_silver.py
 
-│   │   ├── build_transactions.py
+│   │   ├── build_transactions_silver.py
 
 │   │   ├── build_merchants_silver.py
 
@@ -638,11 +638,11 @@ banking-data-lakehouse/
 
 │   └── gold/
 
-│       ├── build_daily_transaction_summary.py
+│       ├── build_daily_transactions_summary.py
 
-│       ├── build_customer_transaction_metrics.py
+│       ├── build_customer_transactions_metrics.py
 
-│       ├── build_merchant_performance.py
+│       ├── build_merchants_performance.py
 
 │       ├── build_loan_portfolio.py
 
@@ -722,11 +722,11 @@ banking-data-lakehouse/
 
 └── README.md
 
-\`\`\`
+```
 
-\---
+---
 
-**# 🥉 Bronze Layer**
+# 🥉 Bronze Layer
 
 The Bronze layer represents the raw data ingestion layer.
 
@@ -734,7 +734,7 @@ Data is stored as Apache Parquet and partitioned by year and month based on the 
 
 Example:
 
-\`\`\`text
+```text
 
 data/bronze/transactions/
 
@@ -758,7 +758,7 @@ data/bronze/transactions/
 
     └── ...
 
-\`\`\`
+```
 
 The Bronze ingestion process was designed to handle large datasets without loading the entire dataset into memory.
 
@@ -766,9 +766,9 @@ Data is processed in batches using PyArrow.
 
 This is particularly important for the 5 million transaction dataset.
 
-\---
+---
 
-**# 🥈 Silver Layer**
+# 🥈 Silver Layer
 
 The Silver layer is implemented using Apache Spark.
 
@@ -776,29 +776,29 @@ Its purpose is to transform Bronze data into clean, validated, and trusted datas
 
 Current transformations include:
 
-\* String standardization
+* String standardization
 
-\* Text trimming
+* Text trimming
 
-\* Categorical normalization
+* Categorical normalization
 
-\* Duplicate detection
+* Duplicate detection
 
-\* Primary key validation
+* Primary key validation
 
-\* Foreign key validation
+* Foreign key validation
 
-\* Business rule validation
+* Business rule validation
 
-\* Schema/type normalization
+* Schema/type normalization
 
-\* Partitioned output
+* Partitioned output
 
-\* Invalid record quarantine
+* Invalid record quarantine
 
 The processing flow is:
 
-\`\`\`text
+```text
 
 BRONZE
 
@@ -826,47 +826,47 @@ Apache Spark
 
 SILVER        QUARANTINE
 
-\`\`\`
+```
 
 The Silver layer currently contains validated datasets for:
 
-\* Customers
+* Customers
 
-\* Accounts
+* Accounts
 
-\* Merchants
+* Merchants
 
-\* Transactions
+* Transactions
 
-\* Cards
+* Cards
 
-\* Loans
+* Loans
 
-\* Loan Payments
+* Loan Payments
 
-\---
+---
 
-**# 🔎 Data Quality**
+# 🔎 Data Quality
 
 Data quality is treated as a core part of the pipeline.
 
 Validation is performed during Silver processing and through dedicated QA scripts.
 
-**## Primary Key Validation**
+## Primary Key Validation
 
 Each Silver dataset is validated for:
 
-\* NULL primary keys
+* NULL primary keys
 
-\* Duplicate primary keys
+* Duplicate primary keys
 
 Current results:
 
-\`\`\`text
+```text
 
 Dataset                     Records     Duplicates     NULL PK
 
-\----------------------------------------------------------------
+----------------------------------------------------------------
 
 customers                   100,000              0           0
 
@@ -882,15 +882,15 @@ loans                        30,000              0           0
 
 loan_payments               740,448              0           0
 
-\`\`\`
+```
 
-**## Referential Integrity**
+## Referential Integrity
 
 Foreign key relationships are validated between related datasets.
 
 Examples:
 
-\`\`\`text
+```text
 
 transactions.account_id
 
@@ -898,9 +898,9 @@ transactions.account_id
 
 accounts.account_id
 
-\`\`\`
+```
 
-\`\`\`text
+```text
 
 transactions.merchant_id
 
@@ -908,9 +908,9 @@ transactions.merchant_id
 
 merchants.merchant_id
 
-\`\`\`
+```
 
-\`\`\`text
+```text
 
 cards.account_id
 
@@ -918,9 +918,9 @@ cards.account_id
 
 accounts.account_id
 
-\`\`\`
+```
 
-\`\`\`text
+```text
 
 loans.customer_id
 
@@ -928,9 +928,9 @@ loans.customer_id
 
 customers.customer_id
 
-\`\`\`
+```
 
-\`\`\`text
+```text
 
 loan_payments.loan_id
 
@@ -938,19 +938,19 @@ loan_payments.loan_id
 
 loans.loan_id
 
-\`\`\`
+```
 
 The Silver QA process currently reports no invalid foreign key relationships.
 
-\---
+---
 
-**# 🥇 Gold Layer**
+# 🥇 Gold Layer
 
 The Gold layer contains business-oriented analytical datasets generated from the validated Silver layer.
 
 Current Gold models:
 
-\`\`\`text
+```text
 
 data/gold/
 
@@ -964,13 +964,13 @@ data/gold/
 
 └── customer_360/
 
-\`\`\`
+```
 
-**## Daily Transaction Summary**
+## Daily Transaction Summary
 
 Aggregates transactions by:
 
-\`\`\`text
+```text
 
 transaction_date
 
@@ -978,11 +978,11 @@ transaction_type
 
 status
 
-\`\`\`
+```
 
 Metrics include:
 
-\`\`\`text
+```text
 
 transaction_count
 
@@ -994,27 +994,27 @@ minimum_amount
 
 maximum_amount
 
-\`\`\`
+```
 
 This model supports time-series transaction analysis.
 
-**## Customer Transaction Metrics**
+## Customer Transaction Metrics
 
 Provides transaction-level metrics aggregated by customer.
 
 Metrics include customer segmentation, transaction volume, transaction amounts, transaction types, status metrics, and transaction timestamps.
 
-**## Merchant Performance**
+## Merchant Performance
 
 Provides performance metrics for merchants, including transaction volume, transaction amounts, transaction status, and merchant attributes.
 
-**## Loan Portfolio**
+## Loan Portfolio
 
 Provides a consolidated view of the loan portfolio and payment behavior.
 
 Metrics include:
 
-\`\`\`text
+```text
 
 loan_id
 
@@ -1042,17 +1042,17 @@ total_paid_amount
 
 remaining_amount
 
-\`\`\`
+```
 
-\> \`remaining_amount\` is currently a simplified analytical metric calculated from principal amount minus total paid amount. It does not represent a real amortization balance.
+> `remaining_amount` is currently a simplified analytical metric calculated from principal amount minus total paid amount. It does not represent a real amortization balance.
 
-**## Customer 360**
+## Customer 360
 
 The Customer 360 model consolidates information from multiple banking domains into a single customer-level analytical dataset.
 
 It combines:
 
-\`\`\`text
+```text
 
 CUSTOMERS
 
@@ -1068,55 +1068,55 @@ CUSTOMERS
 
    └── LOAN PAYMENTS
 
-\`\`\`
+```
 
 The model contains customer-level metrics related to:
 
-\* Accounts
+* Accounts
 
-\* Transactions
+* Transactions
 
-\* Cards
+* Cards
 
-\* Loans
+* Loans
 
-\* Loan payments
+* Loan payments
 
-\* Defaulted loans
+* Defaulted loans
 
-\* Late payments
+* Late payments
 
-\* Total amounts
+* Total amounts
 
 This model will serve as an important foundation for future analytics and machine learning workloads.
 
-\---
+---
 
-**# 🧪 Gold Quality Assurance**
+# 🧪 Gold Quality Assurance
 
 The Gold layer has a dedicated QA process.
 
 Validation checks include:
 
-\* Primary key uniqueness
+* Primary key uniqueness
 
-\* NULL primary keys
+* NULL primary keys
 
-\* Composite key uniqueness
+* Composite key uniqueness
 
-\* Record count reconciliation
+* Record count reconciliation
 
-\* Referential integrity
+* Referential integrity
 
-\* Metric consistency
+* Metric consistency
 
-\* Negative metric detection
+* Negative metric detection
 
-\* Aggregation reconciliation against Silver
+* Aggregation reconciliation against Silver
 
 Examples:
 
-\`\`\`text
+```text
 
 Silver Transactions
 
@@ -1132,9 +1132,9 @@ Gold transaction_count
 
 5,000,000 records
 
-\`\`\`
+```
 
-\`\`\`text
+```text
 
 Silver Customers
 
@@ -1150,21 +1150,21 @@ Customer 360
 
 100,000 customers
 
-\`\`\`
+```
 
 The current Gold QA stage has been successfully executed.
 
-\---
+---
 
-**# 🔄 dbt Transformation Layer**
+# 🔄 dbt Transformation Layer
 
 After the Spark-based ETL pipeline, dbt is used as an analytical transformation and testing layer.
 
-The dbt project uses **\*\*DuckDB\*\*** to query the local Parquet-based Silver data.
+The dbt project uses **DuckDB** to query the local Parquet-based Silver data.
 
 The dbt architecture follows:
 
-\`\`\`text
+```text
 
 Silver Parquet
 
@@ -1186,15 +1186,15 @@ Silver Parquet
 
     MARTS
 
-\`\`\`
+```
 
-**## Staging**
+## Staging
 
 The staging layer exposes the Silver datasets through dbt models.
 
 Current staging models:
 
-\`\`\`text
+```text
 
 stg_customers
 
@@ -1210,17 +1210,17 @@ stg_loans
 
 stg_loan_payments
 
-\`\`\`
+```
 
 Staging models are materialized as views.
 
-**## Intermediate**
+## Intermediate
 
 The intermediate layer contains reusable transformations and joins between the staging models.
 
 Current models:
 
-\`\`\`text
+```text
 
 int_customer_transactions
 
@@ -1230,19 +1230,19 @@ int_loan_payments
 
 int_customer_loans
 
-\`\`\`
+```
 
 These models enrich and combine data before it reaches the analytical marts.
 
 Intermediate models are materialized as tables.
 
-**## Marts**
+## Marts
 
 The marts layer contains business-oriented analytical models designed for downstream consumption.
 
 Current models:
 
-\`\`\`text
+```text
 
 fct_daily_transactions
 
@@ -1254,43 +1254,43 @@ fct_customer_transactions
 
 customer_360
 
-\`\`\`
+```
 
 Marts are materialized as tables.
 
 The marts provide datasets suitable for:
 
-\* BI dashboards
+* BI dashboards
 
-\* Analytical queries
+* Analytical queries
 
-\* Business metrics
+* Business metrics
 
-\* Machine learning feature engineering
+* Machine learning feature engineering
 
-**## dbt Data Quality**
+## dbt Data Quality
 
 The dbt project includes tests and documentation for:
 
-\* Primary key uniqueness
+* Primary key uniqueness
 
-\* NULL checks
+* NULL checks
 
-\* Model-level documentation
+* Model-level documentation
 
-\* Column descriptions
+* Column descriptions
 
-\* Analytical model validation
+* Analytical model validation
 
 The current dbt test suite executes successfully across the Staging, Intermediate, and Mart layers.
 
-\---
+---
 
-**# 🔄 End-to-End Pipeline**
+# 🔄 End-to-End Pipeline
 
 The project currently supports the following processing flow:
 
-\`\`\`text
+```text
 
 Synthetic Data
 
@@ -1360,19 +1360,19 @@ dbt
 
 dbt Tests
 
-\`\`\`
+```
 
 The complete ETL, Lakehouse, and orchestration pipeline is currently operational.
 
-\---
+---
 
-**# 🔄 Incremental Processing**
+# 🔄 Incremental Processing
 
 A major objective of the project is to avoid reprocessing the entire dataset whenever new data arrives.
 
 Instead of:
 
-\`\`\`text
+```text
 
 10,000,000 existing records
 
@@ -1384,11 +1384,11 @@ Instead of:
 
 Process all 10,050,000 records
 
-\`\`\`
+```
 
 The target architecture is:
 
-\`\`\`text
+```text
 
 Existing Data
 
@@ -1410,113 +1410,113 @@ Only New Records
 
 Incremental Processing
 
-\`\`\`
+```
 
 Incremental processing will be implemented in a future phase using Lakehouse table capabilities and orchestration.
 
-\---
+---
 
-**# 🚀 Roadmap**
+# 🚀 Roadmap
 
-**## Phase 1 — Synthetic Data**
+## Phase 1 — Synthetic Data
 
-\* [x] Define banking domain
+* [x] Define banking domain
 
-\* [x] Generate customers
+* [x] Generate customers
 
-\* [x] Generate accounts
+* [x] Generate accounts
 
-\* [x] Generate transactions
+* [x] Generate transactions
 
-\* [x] Generate merchants
+* [x] Generate merchants
 
-\* [x] Generate cards
+* [x] Generate cards
 
-\* [x] Generate loans
+* [x] Generate loans
 
-\* [x] Generate loan payments
+* [x] Generate loan payments
 
-\* [x] Perform initial data profiling
+* [x] Perform initial data profiling
 
-**## Phase 2 — Data Lake / Bronze**
+## Phase 2 — Data Lake / Bronze
 
-\* [x] Create Bronze layer
+* [x] Create Bronze layer
 
-\* [x] Store data as Parquet
+* [x] Store data as Parquet
 
-\* [x] Implement date partitioning
+* [x] Implement date partitioning
 
-\* [x] Implement batch-based ingestion
+* [x] Implement batch-based ingestion
 
-\* [x] Avoid full dataset loading during Bronze processing
+* [x] Avoid full dataset loading during Bronze processing
 
-\* [ ] Improve partition strategy
+* [ ] Improve partition strategy
 
-\* [ ] Add metadata management
+* [ ] Add metadata management
 
-**## Phase 3 — Silver Layer**
+## Phase 3 — Silver Layer
 
-\* [x] Introduce PySpark
+* [x] Introduce PySpark
 
-\* [x] Read Bronze data
+* [x] Read Bronze data
 
-\* [x] Standardize data
+* [x] Standardize data
 
-\* [x] Deduplicate records
+* [x] Deduplicate records
 
-\* [x] Validate primary keys
+* [x] Validate primary keys
 
-\* [x] Validate foreign keys
+* [x] Validate foreign keys
 
-\* [x] Validate business rules
+* [x] Validate business rules
 
-\* [x] Implement quarantine processing
+* [x] Implement quarantine processing
 
-\* [x] Create Silver datasets
+* [x] Create Silver datasets
 
-\* [x] Create Silver QA
+* [x] Create Silver QA
 
-\* [x] Validate Silver referential integrity
+* [x] Validate Silver referential integrity
 
-**## Phase 4 — Gold Layer**
+## Phase 4 — Gold Layer
 
-\* [x] Create analytical models
+* [x] Create analytical models
 
-\* [x] Daily transaction summary
+* [x] Daily transaction summary
 
-\* [x] Customer transaction metrics
+* [x] Customer transaction metrics
 
-\* [x] Merchant performance
+* [x] Merchant performance
 
-\* [x] Loan portfolio
+* [x] Loan portfolio
 
-\* [x] Customer 360
+* [x] Customer 360
 
-\* [x] Implement Gold QA
+* [x] Implement Gold QA
 
-\* [x] Validate aggregation consistency
+* [x] Validate aggregation consistency
 
-**## Phase 5 — Transformation with dbt**
+## Phase 5 — Transformation with dbt
 
-\* [x] Introduce dbt Core
+* [x] Introduce dbt Core
 
-\* [x] Configure DuckDB
+* [x] Configure DuckDB
 
-\* [x] Create staging models
+* [x] Create staging models
 
-\* [x] Create intermediate models
+* [x] Create intermediate models
 
-\* [x] Create analytical marts
+* [x] Create analytical marts
 
-\* [x] Add dbt tests
+* [x] Add dbt tests
 
-\* [x] Add model documentation
+* [x] Add model documentation
 
-\* [ ] Implement lineage visualization
+* [ ] Implement lineage visualization
 
-\* [ ] Implement incremental models
+* [ ] Implement incremental models
 
-**## Phase 6 — Lakehouse
+## Phase 6 — Lakehouse
 
 * [x] Introduce Apache Iceberg
 * [x] Implement Iceberg table management
@@ -1560,111 +1560,109 @@ Incremental processing will be implemented in a future phase using Lakehouse tab
 
 ## Phase 10 — Machine Learning
 
-*
+* [ ] Customer segmentation
 
-\* [ ] Customer segmentation
+* [ ] Loan default prediction
 
-\* [ ] Loan default prediction
+* [ ] Feature engineering
 
-\* [ ] Feature engineering
+* [ ] Model training
 
-\* [ ] Model training
+* [ ] Model evaluation
 
-\* [ ] Model evaluation
+* [ ] Integrate ML outputs with Gold/Lakehouse layer
 
-\* [ ] Integrate ML outputs with Gold/Lakehouse layer
+---
 
-\---
-
-**# 🧪 Running the Project**
+# 🧪 Running the Project
 
 Create a virtual environment:
 
-\`\`\`bash
+```bash
 
 python -m venv .venv
 
-\`\`\`
+```
 
 Activate it:
 
-\`\`\`bash
+```bash
 
 source .venv/bin/activate
 
-\`\`\`
+```
 
 Install dependencies:
 
-\`\`\`bash
+```bash
 
 pip install -r requirements.txt
 
-\`\`\`
+```
 
 Generate the datasets:
 
-\`\`\`bash
+```bash
 
-python scripts/generate_customers.py
+python scripts/generation/generate_costumers.py
 
-python scripts/generate_accounts.py
+python scripts/generation/generate_accounts.py
 
-python scripts/generate_merchants.py
+python scripts/generation/generate_merchants.py
 
-python scripts/generate_transactions.py
+python scripts/generation/generate_transactions.py
 
-python scripts/generate_cards.py
+python scripts/generation/generate_cards.py
 
-python scripts/generate_loans.py
+python scripts/generation/generate_loans.py
 
-python scripts/generate_loan_payments.py
+python scripts/generation/generate_loan_payments.py
 
-\`\`\`
+```
 
 Run initial data profiling:
 
-\`\`\`bash
+```bash
 
 python scripts/profile_data.py
 
-\`\`\`
+```
 
 Build the Bronze layer:
 
-\`\`\`bash
+```bash
 
 python scripts/build_bronze.py
 
-\`\`\`
+```
 
 Run the Spark pipeline:
 
-\`\`\`bash
+```bash
 
 python pipeline.py
 
-\`\`\`
+```
 
 Run Silver QA:
 
-\`\`\`bash
+```bash
 
 spark-submit scripts/profile_silver_data.py
 
-\`\`\`
+```
 
 Run Gold QA:
 
-\`\`\`bash
+```bash
 
 spark-submit scripts/profile_gold_data.py
 
-\`\`\`
+```
 
 Run dbt:
 
-\`\`\`bash
+```bash
 
 cd dbt/banking_dbt
 
@@ -1674,13 +1672,13 @@ dbt run
 
 dbt test
 
-\`\`\`
+```
 
-\---
+---
 
-**# 🔐 Data Privacy**
+# 🔐 Data Privacy
 
-This project does **\*\*not\*\*** use real banking or customer data.
+This project does **not** use real banking or customer data.
 
 All customers, transactions, accounts, merchants, cards, loans, and payments are synthetically generated for educational and portfolio purposes.
 
@@ -1688,67 +1686,67 @@ No real personal or financial information is stored in the repository.
 
 Local analytical artifacts such as the DuckDB database are also excluded from version control.
 
-\---
+---
 
-**# 📚 Engineering Concepts Demonstrated**
+# 📚 Engineering Concepts Demonstrated
 
 This project demonstrates practical knowledge of:
 
-\* ETL / ELT
+* ETL / ELT
 
-\* Data Lake Architecture
+* Data Lake Architecture
 
-\* Medallion Architecture
+* Medallion Architecture
 
-\* Lakehouse Architecture
+* Lakehouse Architecture
 
-\* Apache Spark
+* Apache Spark
 
-\* PySpark
+* PySpark
 
-\* Apache Parquet
+* Apache Parquet
 
-\* Partitioning
+* Partitioning
 
-\* Batch Processing
+* Batch Processing
 
-\* Distributed Data Processing
+* Distributed Data Processing
 
-\* Data Quality
+* Data Quality
 
-\* Data Validation
+* Data Validation
 
-\* Referential Integrity
+* Referential Integrity
 
-\* Business Rule Validation
+* Business Rule Validation
 
-\* Data Quarantine
+* Data Quarantine
 
-\* Data Modeling
+* Data Modeling
 
-\* Analytical Modeling
+* Analytical Modeling
 
-\* Data Warehousing
+* Data Warehousing
 
-\* dbt
+* dbt
 
-\* SQL Transformations
+* SQL Transformations
 
-\* dbt Testing
+* dbt Testing
 
-\* Data Documentation
+* Data Documentation
 
-\* Pipeline Design
+* Pipeline Design
 
-\* Incremental Processing
+* Incremental Processing
 
-\* Data Governance
+* Data Governance
 
-\* Scalable Data Processing
+* Scalable Data Processing
 
-\---
+---
 
-**# 📌 Current Project Status
+# 📌 Current Project Status
 
 The end-to-end Data Engineering pipeline is currently operational.
 
