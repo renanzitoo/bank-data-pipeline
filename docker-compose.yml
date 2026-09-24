@@ -1,5 +1,9 @@
 services:
 
+  # ============================================================
+  # MINIO
+  # ============================================================
+
   minio:
     image: quay.io/minio/minio:latest
     container_name: banking-minio
@@ -15,10 +19,18 @@ services:
     volumes:
       - minio_data:/data
 
-    command: server /data --console-address ":9001"
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
 
     restart: unless-stopped
 
+
+  # ============================================================
+  # SPARK
+  # ============================================================
 
   spark:
     build:
@@ -34,6 +46,7 @@ services:
       - ./scripts:/workspace/scripts
       - ./data:/workspace/data
       - ./iceberg:/workspace/iceberg
+      - ./pipeline.py:/workspace/pipeline.py
 
     environment:
       MINIO_ENDPOINT: minio:9000
@@ -43,11 +56,439 @@ services:
 
     working_dir: /workspace
 
-    command: ["tail", "-f", "/dev/null"]
+    command:
+      - tail
+      - -f
+      - /dev/null
 
     stdin_open: true
     tty: true
 
+    restart: unless-stopped
+
+
+  # ============================================================
+  # AIRFLOW POSTGRES
+  # ============================================================
+
+  postgres:
+    image: postgres:16
+
+    container_name: banking-airflow-postgres
+
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U airflow -d airflow
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # REDIS
+  # ============================================================
+
+  redis:
+    image: redis:7.2
+
+    container_name: banking-airflow-redis
+
+    expose:
+      - "6379"
+
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # AIRFLOW INIT
+  # ============================================================
+
+  airflow-init:
+    image: apache/airflow:3.3.2
+
+    container_name: banking-airflow-init
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+    environment:
+
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CELERY__BROKER_URL: >-
+        redis://redis:6379/0
+
+      AIRFLOW__CELERY__RESULT_BACKEND: >-
+        db+postgresql://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__CORE__AUTH_MANAGER: >-
+        airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: >-
+        /opt/airflow/auth/simple_auth_manager_passwords.json
+
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: >-
+        http://airflow-apiserver:8080/execution/
+
+      AIRFLOW__API_AUTH__JWT_SECRET: >-
+        banking-airflow-jwt-secret
+
+      AIRFLOW__API__SECRET_KEY: >-
+        banking-airflow-api-secret
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/auth:/opt/airflow/auth
+
+    command:
+      - bash
+      - -c
+      - |
+        airflow db migrate
+
+
+  # ============================================================
+  # AIRFLOW API SERVER
+  # ============================================================
+
+  airflow-apiserver:
+    image: apache/airflow:3.3.2
+
+    container_name: banking-airflow-apiserver
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    ports:
+      - "8080:8080"
+
+    environment:
+
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CELERY__BROKER_URL: >-
+        redis://redis:6379/0
+
+      AIRFLOW__CELERY__RESULT_BACKEND: >-
+        db+postgresql://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__CORE__AUTH_MANAGER: >-
+        airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: >-
+        /opt/airflow/auth/simple_auth_manager_passwords.json
+
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: >-
+        http://airflow-apiserver:8080/execution/
+
+      AIRFLOW__API_AUTH__JWT_SECRET: >-
+        banking-airflow-jwt-secret
+
+      AIRFLOW__API__SECRET_KEY: >-
+        banking-airflow-api-secret
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/auth:/opt/airflow/auth
+
+    command:
+      - api-server
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # AIRFLOW SCHEDULER
+  # ============================================================
+
+  airflow-scheduler:
+    image: apache/airflow:3.3.2
+
+    container_name: banking-airflow-scheduler
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    environment:
+
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CELERY__BROKER_URL: >-
+        redis://redis:6379/0
+
+      AIRFLOW__CELERY__RESULT_BACKEND: >-
+        db+postgresql://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__CORE__AUTH_MANAGER: >-
+        airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: >-
+        /opt/airflow/auth/simple_auth_manager_passwords.json
+
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: >-
+        http://airflow-apiserver:8080/execution/
+
+      AIRFLOW__API_AUTH__JWT_SECRET: >-
+        banking-airflow-jwt-secret
+
+      AIRFLOW__API__SECRET_KEY: >-
+        banking-airflow-api-secret
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/auth:/opt/airflow/auth
+
+    command:
+      - scheduler
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # AIRFLOW DAG PROCESSOR
+  # ============================================================
+
+  airflow-dag-processor:
+    image: apache/airflow:3.3.2
+
+    container_name: banking-airflow-dag-processor
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    environment:
+
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CELERY__BROKER_URL: >-
+        redis://redis:6379/0
+
+      AIRFLOW__CELERY__RESULT_BACKEND: >-
+        db+postgresql://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__CORE__AUTH_MANAGER: >-
+        airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: >-
+        /opt/airflow/auth/simple_auth_manager_passwords.json
+
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: >-
+        http://airflow-apiserver:8080/execution/
+
+      AIRFLOW__API_AUTH__JWT_SECRET: >-
+        banking-airflow-jwt-secret
+
+      AIRFLOW__API__SECRET_KEY: >-
+        banking-airflow-api-secret
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/auth:/opt/airflow/auth
+
+    command:
+      - dag-processor
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # AIRFLOW CELERY WORKER
+  # ============================================================
+
+  airflow-worker:
+    build:
+      context: ./docker/airflow
+
+    container_name: banking-airflow-worker
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    environment:
+
+      DUMB_INIT_SETSID: "0"
+
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CELERY__BROKER_URL: >-
+        redis://redis:6379/0
+
+      AIRFLOW__CELERY__RESULT_BACKEND: >-
+        db+postgresql://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__CORE__AUTH_MANAGER: >-
+        airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: >-
+        /opt/airflow/auth/simple_auth_manager_passwords.json
+
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: >-
+        http://airflow-apiserver:8080/execution/
+
+      AIRFLOW__API_AUTH__JWT_SECRET: >-
+        banking-airflow-jwt-secret
+
+      AIRFLOW__API__SECRET_KEY: >-
+        banking-airflow-api-secret
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/auth:/opt/airflow/auth
+
+      # Docker socket
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    # Permite que o usuário airflow acesse o Docker socket.
+    # O valor 999 é o GID padrão do grupo docker em muitas
+    # instalações Linux. Se necessário, ajustamos depois.
+    group_add:
+      - "986"
+
+    command:
+      - celery
+      - worker
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # AIRFLOW TRIGGERER
+  # ============================================================
+
+  airflow-triggerer:
+    image: apache/airflow:3.3.2
+
+    container_name: banking-airflow-triggerer
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    environment:
+
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+        postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CELERY__BROKER_URL: >-
+        redis://redis:6379/0
+
+      AIRFLOW__CELERY__RESULT_BACKEND: >-
+        db+postgresql://airflow:airflow@postgres:5432/airflow
+
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+      AIRFLOW__CORE__AUTH_MANAGER: >-
+        airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "airflow:admin"
+
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: >-
+        /opt/airflow/auth/simple_auth_manager_passwords.json
+
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: >-
+        http://airflow-apiserver:8080/execution/
+
+      AIRFLOW__API_AUTH__JWT_SECRET: >-
+        banking-airflow-jwt-secret
+
+      AIRFLOW__API__SECRET_KEY: >-
+        banking-airflow-api-secret
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/auth:/opt/airflow/auth
+
+    command:
+      - triggerer
+
+    restart: unless-stopped
+
+
+# ============================================================
+# VOLUMES
+# ============================================================
 
 volumes:
+
   minio_data:
+
+  airflow_postgres_data:
